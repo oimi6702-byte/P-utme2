@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎓 POST-UTME CBT EXAM</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600&display=swap');
+
+  :root {
+    --ink:      #0b0f1a;
+    --surface:  #111827;
+    --card:     #1a2233;
+    --border:   rgba(255,255,255,0.07);
+    --accent:   #6366f1;
+    --accent2:  #818cf8;
+    --gold:     #f59e0b;
+    --danger:   #ef4444;
+    --success:  #10b981;
+    --muted:    #64748b;
+    --text:     #e2e8f0;
+    --subtext:  #94a3b8;
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family:'Inter',system-ui,sans-serif;
+    background: var(--ink);
+    color: var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+
+  /* ── LOCK SCREEN ──────────────────────────── */
+  #lockScreen {
+    position:fixed; inset:0; z-index:9999;
+    background: var(--ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:20px;
+    text-align:center; padding:24px;
+  }
+  #lockScreen.hidden { display:none; }
+  .lock-logo {
+    font-size:3rem; margin-bottom:4px;
+  }
+  .lock-title {
+    font-size:1.6rem; font-weight:800; color:var(--text);
+    letter-spacing:-0.5px;
+  }
+  .lock-sub {
+    color:var(--subtext); font-size:0.9rem; max-width:340px; line-height:1.5;
+  }
+  .lock-btn {
+    margin-top:8px;
+    background: var(--accent);
+    color:#fff; border:none;
+    padding:14px 36px; border-radius:100px;
+    font-weight:700; font-size:1rem; cursor:pointer;
+    box-shadow:0 0 30px rgba(99,102,241,0.4);
+    transition:transform 0.15s, box-shadow 0.15s;
+  }
+  .lock-btn:hover { transform:translateY(-2px); box-shadow:0 0 40px rgba(99,102,241,0.55); }
+
+  /* ── OVERLAY MODALS ────────────────────────── */
+  .modal-overlay {
+    position:fixed; inset:0; z-index:8000;
+    background:rgba(0,0,0,0.85);
+    backdrop-filter:blur(12px);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .modal-overlay.hidden { display:none; }
+
+  .modal-card {
+    background: var(--card);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:36px 32px;
+    width:100%; max-width:440px;
+    box-shadow:0 40px 80px rgba(0,0,0,0.6);
+    animation:popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .modal-card.wide { max-width:540px; }
+  @keyframes popIn { from{opacity:0;transform:scale(0.88);} to{opacity:1;transform:scale(1);} }
+
+  .modal-card h2 {
+    font-size:1.4rem; font-weight:800; color:#fff;
+    margin-bottom:24px; letter-spacing:-0.3px;
+  }
+  .modal-card h2 span { color:var(--accent2); }
+
+  .field-label {
+    font-size:0.75rem; font-weight:600; color:var(--subtext);
+    text-transform:uppercase; letter-spacing:0.08em;
+    margin-bottom:6px;
+  }
+  .modal-input {
+    width:100%; padding:14px 18px;
+    background:rgba(255,255,255,0.06);
+    border:1.5px solid rgba(255,255,255,0.1);
+    border-radius:14px; color:#fff;
+    font-size:1rem; font-family:'Inter',sans-serif;
+    outline:none; margin-bottom:16px;
+    transition:border-color 0.2s, box-shadow 0.2s;
+  }
+  .modal-input:focus {
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(99,102,241,0.2);
+  }
+  .modal-input::placeholder { color:var(--muted); }
+
+  .modal-btn {
+    width:100%; padding:15px;
+    background: linear-gradient(135deg, var(--accent), #4f46e5);
+    color:#fff; border:none; border-radius:14px;
+    font-weight:700; font-size:1rem; cursor:pointer;
+    font-family:'Inter',sans-serif;
+    box-shadow:0 8px 24px rgba(99,102,241,0.35);
+    transition:transform 0.15s, box-shadow 0.15s;
+    margin-top:4px;
+  }
+  .modal-btn:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(99,102,241,0.45); }
+
+  .modal-note {
+    text-align:center; font-size:0.78rem;
+    color:var(--muted); margin-top:14px;
+  }
+
+  /* Subject checkboxes */
+  .subject-grid {
+    display:grid; grid-template-columns:1fr 1fr;
+    gap:10px; margin:4px 0 20px;
+  }
+  .subj-label {
+    display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,0.05);
+    border:1.5px solid rgba(255,255,255,0.08);
+    border-radius:12px; padding:12px 14px;
+    cursor:pointer; transition:all 0.15s;
+    font-weight:600; font-size:0.88rem;
+  }
+  .subj-label:has(input:checked) {
+    border-color:var(--accent);
+    background:rgba(99,102,241,0.15);
+    color:#fff;
+  }
+  .subj-label input { accent-color:var(--accent); width:16px; height:16px; }
+
+  /* ── WARNING BANNER ────────────────────────── */
+  #warnBanner {
+    position:fixed; top:0; left:0; right:0; z-index:7000;
+    background:var(--danger);
+    color:#fff; text-align:center;
+    padding:10px 16px;
+    font-weight:700; font-size:0.9rem;
+    transform:translateY(-100%);
+    transition:transform 0.3s;
+  }
+  #warnBanner.show { transform:translateY(0); }
+
+  /* ── EXAM SHELL ────────────────────────────── */
+  #examShell {
+    display:none;
+    min-height:100vh;
+    flex-direction:column;
+  }
+  #examShell.active { display:flex; }
+
+  /* Top bar */
+  .top-bar {
+    position:sticky; top:0; z-index:100;
+    background:rgba(11,15,26,0.92);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    padding:12px 20px;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px;
+  }
+  .top-bar-left { display:flex; align-items:center; gap:12px; }
+  .exam-title { font-weight:800; font-size:1rem; color:#fff; }
+  .badge-pill {
+    background:rgba(99,102,241,0.2);
+    color:var(--accent2); border:1px solid rgba(99,102,241,0.3);
+    border-radius:100px; padding:4px 12px;
+    font-size:0.72rem; font-weight:700;
+    text-transform:uppercase; letter-spacing:0.06em;
+  }
+
+  /* Timer */
+  .timer-wrap {
+    display:flex; align-items:center; gap:10px;
+  }
+  #timerDisplay {
+    font-family:'JetBrains Mono',monospace;
+    font-size:1.6rem; font-weight:600;
+    color:var(--gold);
+    text-shadow:0 0 20px rgba(245,158,11,0.5);
+    letter-spacing:2px; min-width:80px; text-align:center;
+  }
+  #timerDisplay.danger { color:var(--danger); text-shadow:0 0 20px rgba(239,68,68,0.6); animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+
+  .calc-trigger {
+    background:rgba(255,255,255,0.08);
+    border:1px solid var(--border);
+    color:var(--text); border-radius:100px;
+    padding:7px 14px; font-size:0.8rem; font-weight:600;
+    cursor:pointer; transition:background 0.15s;
+    white-space:nowrap;
+  }
+  .calc-trigger:hover { background:rgba(255,255,255,0.13); }
+
+  /* ── SUBJECT TABS ──────────────────────────── */
+  .tabs-wrap {
+    padding:14px 20px 0;
+    background:var(--ink);
+    border-bottom:1px solid var(--border);
+    display:flex; gap:6px; overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .tabs-wrap::-webkit-scrollbar { display:none; }
+
+  .tab-btn {
+    background:transparent;
+    border:1.5px solid rgba(255,255,255,0.1);
+    color:var(--subtext); border-radius:100px;
+    padding:8px 18px; font-size:0.8rem; font-weight:600;
+    cursor:pointer; white-space:nowrap;
+    transition:all 0.2s;
+    font-family:'Inter',sans-serif;
+  }
+  .tab-btn:hover { color:var(--text); border-color:rgba(255,255,255,0.2); }
+  .tab-btn.active {
+    background:var(--accent); color:#fff;
+    border-color:var(--accent);
+    box-shadow:0 0 16px rgba(99,102,241,0.35);
+  }
+
+  /* Progress pills */
+  .progress-row {
+    display:flex; gap:4px; padding:12px 20px;
+    overflow-x:auto; scrollbar-width:none;
+    background:var(--ink);
+  }
+  .progress-row::-webkit-scrollbar { display:none; }
+  .prog-pill {
+    min-width:28px; height:28px; border-radius:8px;
+    background:rgba(255,255,255,0.07);
+    border:1.5px solid rgba(255,255,255,0.08);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.7rem; font-weight:700; color:var(--muted);
+    cursor:pointer; transition:all 0.15s;
+  }
+  .prog-pill.answered {
+    background:rgba(16,185,129,0.2);
+    border-color:var(--success);
+    color:var(--success);
+  }
+  .prog-pill.current {
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+
+  /* ── QUESTION CARD ─────────────────────────── */
+  .exam-body { flex:1; padding:20px; max-width:780px; margin:0 auto; width:100%; }
+
+  .q-card {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:24px; padding:28px 24px;
+    animation:slideUp 0.2s ease;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+
+  .q-meta {
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:20px;
+  }
+  .q-num {
+    width:40px; height:40px; border-radius:12px;
+    background: linear-gradient(135deg, var(--accent), #4f46e5);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:1rem; color:#fff;
+    flex-shrink:0;
+    box-shadow:0 4px 12px rgba(99,102,241,0.3);
+  }
+  .q-subject-tag {
+    background:rgba(99,102,241,0.15);
+    color:var(--accent2); border-radius:100px;
+    padding:4px 12px; font-size:0.72rem; font-weight:700;
+    text-transform:uppercase; letter-spacing:0.06em;
+  }
+  .q-of { margin-left:auto; color:var(--muted); font-size:0.82rem; font-weight:600; }
+
+  .q-text {
+    font-size:1.05rem; font-weight:600; color:#fff;
+    line-height:1.6; margin-bottom:24px;
+  }
+
+  .options-list { display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+
+  .opt-label {
+    display:flex; align-items:center; gap:14px;
+    padding:15px 18px;
+    background:rgba(255,255,255,0.04);
+    border:1.5px solid rgba(255,255,255,0.08);
+    border-radius:14px; cursor:pointer;
+    transition:all 0.15s; position:relative;
+    overflow:hidden;
+  }
+  .opt-label:hover {
+    background:rgba(99,102,241,0.1);
+    border-color:rgba(99,102,241,0.4);
+  }
+  .opt-label:has(input:checked) {
+    background:rgba(99,102,241,0.18);
+    border-color:var(--accent);
+  }
+
+  .opt-letter {
+    width:30px; height:30px; border-radius:8px;
+    background:rgba(255,255,255,0.08);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:0.82rem; color:var(--muted);
+    flex-shrink:0; transition:all 0.15s;
+  }
+  .opt-label:has(input:checked) .opt-letter {
+    background:var(--accent); color:#fff;
+  }
+  .opt-label input { position:absolute; opacity:0; pointer-events:none; }
+  .opt-text { font-size:0.95rem; font-weight:500; color:var(--text); line-height:1.4; }
+
+  /* Nav */
+  .nav-row {
+    display:flex; align-items:center; gap:12px;
+  }
+  .nav-btn {
+    background:rgba(255,255,255,0.07);
+    border:1.5px solid rgba(255,255,255,0.1);
+    color:var(--text); border-radius:100px;
+    padding:11px 22px; font-size:0.88rem; font-weight:700;
+    cursor:pointer; transition:all 0.15s;
+    font-family:'Inter',sans-serif;
+  }
+  .nav-btn:hover:not(:disabled) { background:rgba(255,255,255,0.12); }
+  .nav-btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .nav-btn.primary {
+    background:linear-gradient(135deg, var(--accent), #4f46e5);
+    border-color:transparent; color:#fff;
+    box-shadow:0 4px 16px rgba(99,102,241,0.3);
+  }
+  .nav-spacer { flex:1; }
+
+  /* Submit section */
+  .submit-section {
+    padding:20px; max-width:780px; margin:0 auto; width:100%;
+  }
+  .submit-btn {
+    width:100%; padding:16px;
+    background:linear-gradient(135deg, #10b981, #059669);
+    color:#fff; border:none; border-radius:16px;
+    font-weight:800; font-size:1.05rem; cursor:pointer;
+    font-family:'Inter',sans-serif;
+    box-shadow:0 8px 24px rgba(16,185,129,0.35);
+    transition:transform 0.15s, box-shadow 0.15s;
+    letter-spacing:0.02em;
+  }
+  .submit-btn:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(16,185,129,0.45); }
+
+  /* Result */
+  #resultPanel {
+    display:none;
+    margin:20px; padding:24px;
+    background:rgba(16,185,129,0.1);
+    border:1.5px solid var(--success);
+    border-radius:20px; text-align:center;
+  }
+  #resultPanel.show { display:block; animation:popIn 0.3s ease; }
+  .score-big { font-size:3rem; font-weight:900; color:var(--success); line-height:1; }
+  .score-label { color:var(--subtext); font-size:0.9rem; margin-top:6px; }
+
+  /* ── CALCULATOR ────────────────────────────── */
+  #calcOverlay {
+    position:fixed; inset:0; z-index:9000;
+    background:rgba(0,0,0,0.7); backdrop-filter:blur(8px);
+    display:none; align-items:center; justify-content:center;
+  }
+  #calcOverlay.show { display:flex; }
+  .calc-box {
+    background:#1e293b; border-radius:24px;
+    padding:20px; width:300px;
+    border:1px solid rgba(255,255,255,0.1);
+    box-shadow:0 30px 60px rgba(0,0,0,0.6);
+    animation:popIn 0.2s ease;
+  }
+  .calc-screen {
+    width:100%; padding:14px 16px;
+    background:#0f172a; color:var(--gold);
+    font-family:'JetBrains Mono',monospace;
+    font-size:1.8rem; font-weight:600;
+    text-align:right; border:none; border-radius:14px;
+    margin-bottom:14px; outline:none;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .calc-grid {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+  }
+  .calc-grid button {
+    padding:14px; font-size:1.1rem; font-weight:700;
+    background:#334155; color:#fff;
+    border:none; border-radius:12px; cursor:pointer;
+    font-family:'JetBrains Mono',monospace;
+    transition:background 0.1s, transform 0.1s;
+  }
+  .calc-grid button:hover { background:#475569; }
+  .calc-grid button:active { transform:scale(0.94); }
+  .calc-grid button.op { background:rgba(99,102,241,0.3); color:var(--accent2); }
+  .calc-grid button.op:hover { background:rgba(99,102,241,0.5); }
+  .calc-grid button.eq { background:var(--accent); color:#fff; }
+  .calc-grid button.eq:hover { background:#4f46e5; }
+  .calc-grid button.cl { background:rgba(239,68,68,0.3); color:#fca5a5; }
+  .calc-grid button.cl:hover { background:rgba(239,68,68,0.5); }
+  .calc-grid button.span2 { grid-column:span 2; }
+
+  /* ── TERMINATE SCREEN ──────────────────────── */
+  #terminateScreen {
+    display:none; position:fixed; inset:0; z-index:9998;
+    background:#0b0f1a; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center; padding:24px; gap:16px;
+  }
+  #terminateScreen.show { display:flex; }
+  .terminate-icon { font-size:4rem; }
+  .terminate-title { font-size:1.8rem; font-weight:800; color:var(--danger); }
+  .terminate-sub { color:var(--subtext); max-width:340px; line-height:1.6; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-logo">🎓</div>
+  <div class="lock-title">POST-UTME CBT EXAM</div>
+  <p class="lock-sub">This exam runs in secure fullscreen mode. Your device will be locked to this exam window. Exiting fullscreen will trigger a warning.</p>
+  <button class="lock-btn" id="enterFullscreenBtn">ENTER SECURE EXAM →</button>
+</div>
+
+<!-- WARNING BANNER -->
+<div id="warnBanner"></div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal" style="display:none;">
+  <div class="modal-card">
+    <h2>🔐 Candidate <span>Login</span></h2>
+    <div class="field-label">First Name</div>
+    <input type="text" id="firstNameInput" class="modal-input" placeholder="e.g. Chukwuemeka" autocomplete="off">
+    <div class="field-label">Last Name</div>
+    <input type="text" id="lastNameInput" class="modal-input" placeholder="e.g. Okafor" autocomplete="off">
+    <div class="field-label">Email Address</div>
+    <input type="email" id="emailInput" class="modal-input" placeholder="e.g. you@gmail.com" autocomplete="off">
+    <button class="modal-btn" id="loginBtn">Continue →</button>
+    <div class="modal-note">All fields are required to proceed</div>
+  </div>
+</div>
+
+<!-- SUBJECT SELECTION MODAL -->
+<div class="modal-overlay" id="subjectModal" style="display:none;">
+  <div class="modal-card wide">
+    <h2>📚 Select <span>Subjects</span></h2>
+    <div class="field-label">Choose at least 3 subjects</div>
+    <div class="subject-grid" id="subjectGrid">
+      <label class="subj-label"><input type="checkbox" value="math"> 🧮 Mathematics</label>
+      <label class="subj-label"><input type="checkbox" value="english"> 📖 English</label>
+      <label class="subj-label"><input type="checkbox" value="general"> 📋 General Paper</label>
+      <label class="subj-label"><input type="checkbox" value="economics"> 💰 Economics</label>
+      <label class="subj-label"><input type="checkbox" value="chemistry"> ⚛️ Chemistry</label>
+      <label class="subj-label"><input type="checkbox" value="physics"> ⚡ Physics</label>
+      <label class="subj-label"><input type="checkbox" value="biology"> 🧬 Biology</label>
+      <label class="subj-label"><input type="checkbox" value="government"> 🏛️ Government</label>
+    </div>
+    <button class="modal-btn" id="startExamBtn">Start Exam →</button>
+    <div class="modal-note">30 minutes will be allocated per subject</div>
+  </div>
+</div>
+
+<!-- EXAM SHELL -->
+<div id="examShell">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span style="font-size:1.2rem;">🎓</span>
+      <span class="exam-title">POST-UTME CBT</span>
+      <span class="badge-pill" id="topBadge"></span>
+    </div>
+    <div class="timer-wrap">
+      <button class="calc-trigger" id="openCalcBtn">🧮 Calculator</button>
+      <div id="timerDisplay">00:00</div>
+    </div>
+  </div>
+
+  <div class="tabs-wrap" id="subjectTabs"></div>
+  <div class="progress-row" id="progressRow"></div>
+
+  <div class="exam-body">
+    <div id="questionCard"></div>
+    <div class="nav-row" style="margin-top:16px;" id="navRow">
+      <button class="nav-btn" id="prevBtn">← Previous</button>
+      <span class="nav-spacer"></span>
+      <button class="nav-btn primary" id="nextBtn">Next →</button>
+    </div>
+  </div>
+
+  <div class="submit-section">
+    <button class="submit-btn" id="submitBtn">✅ SUBMIT EXAM</button>
+    <div id="resultPanel"></div>
+  </div>
+</div>
+
+<!-- TERMINATE SCREEN -->
+<div id="terminateScreen">
+  <div class="terminate-icon">🚫</div>
+  <div class="terminate-title">EXAM TERMINATED</div>
+  <p class="terminate-sub">You left the exam window too many times. Your session has been ended and the examiner has been notified.</p>
+</div>
+
+<!-- CALCULATOR -->
+<div id="calcOverlay">
+  <div class="calc-box">
+    <input type="text" class="calc-screen" id="calcScreen" value="0" readonly>
+    <div class="calc-grid">
+      <button class="cl span2" id="calcClear">C</button>
+      <button class="op" data-op="⌫">⌫</button>
+      <button class="op" data-op="/">÷</button>
+      <button data-num="7">7</button>
+      <button data-num="8">8</button>
+      <button data-num="9">9</button>
+      <button class="op" data-op="*">×</button>
+      <button data-num="4">4</button>
+      <button data-num="5">5</button>
+      <button data-num="6">6</button>
+      <button class="op" data-op="-">−</button>
+      <button data-num="1">1</button>
+      <button data-num="2">2</button>
+      <button data-num="3">3</button>
+      <button class="op" data-op="+">+</button>
+      <button data-num="0" class="span2">0</button>
+      <button data-num=".">.</button>
+      <button class="eq" data-op="=">=</button>
+      <button class="op span2" id="closeCalcBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+emailjs.init("mt3HJUIfu1kcIMjGb");
+
+/* ──────────────────────────────────────────
+   ANSWER OBFUSCATION
+   Correct answer indices are XOR-encoded
+   so they don't appear as plain numbers in source.
+   Key is generated at runtime.
+   ─────────────────────────────────────────── */
+const XK = (Date.now() % 7) + 3; // runtime key 3-9
+function enc(n){ return n ^ XK; }
+
+/* ──────────────────────────────────────────
+   QUESTION BANKS
+   correct values are enc(realIndex) so reading
+   source gives no direct answer.
+   ─────────────────────────────────────────── */
+const RAW = {
+  math: [
+    {t:"Simplify (3x² - 5x + 2) − (x² + 2x − 1)",o:["2x² − 7x + 3","2x² − 3x + 1","4x² − 3x + 3","2x² − 3x + 3"],c:enc(3)},
+    {t:"Solve for x: 2^(x+1) = 16",o:["x = 2","x = 3","x = 4","x = 1"],c:enc(1)},
+    {t:"If log₂x = 3, then x = ?",o:["6","8","9","16"],c:enc(1)},
+    {t:"Find the gradient of the line 3x − 4y + 7 = 0",o:["3/4","−3/4","4/3","−4/3"],c:enc(0)},
+    /* FIXED: correct answer is 185 = index 0, not index 2 */
+    {t:"The sum of the first 10 terms of an AP with a = 5, d = 3 is:",o:["185","230","275","320"],c:enc(0)},
+    {t:"Evaluate sin 60°",o:["0.5000","0.8660","1.0000","1.7321"],c:enc(1)},
+    {t:"Factorise x² − 5x + 6",o:["(x − 2)(x − 3)","(x + 2)(x + 3)","(x − 1)(x − 6)","(x − 2)(x + 3)"],c:enc(0)},
+    {t:"If y = 3x² + 2x, find dy/dx",o:["6x + 2","3x + 2","6x","3x² + 2"],c:enc(0)},
+    {t:"Find the mean of 4, 6, 8, 10, 12",o:["6","7","8","9"],c:enc(2)},
+    {t:"A fair die is rolled. What is the probability of getting an even number?",o:["1/6","1/3","1/2","2/3"],c:enc(2)},
+    {t:"Find the simple interest on ₦5,000 for 2 years at 5% per annum",o:["₦250","₦500","₦1,000","₦1,250"],c:enc(1)},
+    {t:"Convert 0.75 to a fraction in its lowest terms",o:["3/4","6/8","15/20","75/100"],c:enc(0)},
+    {t:"The circumference of a circle with radius 7 cm (π = 22/7) is:",o:["22 cm","44 cm","154 cm","88 cm"],c:enc(1)},
+    {t:"Solve: 3x − 7 = 2x + 5",o:["x = 12","x = −12","x = 2","x = 10"],c:enc(0)},
+    {t:"If a = 2, b = 3, evaluate a² + b² − 2ab",o:["1","5","13","0"],c:enc(0)},
+    {t:"The median of 1, 5, 2, 8, 9 is:",o:["2","5","8","1"],c:enc(1)},
+    {t:"Expand (x + 3)(x − 2)",o:["x² + x − 6","x² + 5x − 6","x² − 5x − 6","x² + 5x + 6"],c:enc(0)},
+    {t:"Find all values of x if |x − 3| = 5",o:["x = 8 or x = −2","x = 8 only","x = −2 only","x = 5"],c:enc(0)},
+    {t:"The LCM of 6 and 8 is:",o:["48","24","12","2"],c:enc(1)},
+    {t:"If 5 pens cost ₦200, what is the cost of 8 pens?",o:["₦320","₦400","₦160","₦240"],c:enc(0)}
+  ],
+  english: [
+    {t:"Choose the correctly spelled word:",o:["Embarrass","Embarass","Embarras","Embaras"],c:enc(0)},
+    {t:"The antonym of 'Benevolent' is:",o:["Kind","Malevolent","Generous","Charitable"],c:enc(1)},
+    {t:"She _____ to the market every day.",o:["go","goes","going","gone"],c:enc(1)},
+    {t:"The expression 'deafening silence' is an example of:",o:["Simile","Metaphor","Oxymoron","Hyperbole"],c:enc(2)},
+    {t:"Select the grammatically correct sentence:",o:["He is taller than me.","He is taller than I.","He is taller than myself.","He is taller than mine."],c:enc(1)},
+    {t:"The word 'Lucid' means:",o:["Confusing","Clear","Dark","Dull"],c:enc(1)},
+    {t:"'The wind whispered through the trees' employs which figure of speech?",o:["Simile","Metaphor","Personification","Hyperbole"],c:enc(2)},
+    {t:"Choose the synonym of 'Procrastinate':",o:["Hurry","Delay","Finish","Plan"],c:enc(1)},
+    {t:"Identify the part of speech of 'beautifully' in: 'She sings beautifully.'",o:["Adjective","Adverb","Noun","Verb"],c:enc(1)},
+    {t:"Neither John nor Mary _____ coming.",o:["are","is","were","have"],c:enc(1)},
+    {t:"'I have _____ my homework.'",o:["done","did","do","does"],c:enc(0)},
+    {t:"The word 'unhappiness' contains:",o:["A prefix and a suffix","Only a prefix","Only a suffix","No affix"],c:enc(0)},
+    {t:"Which is a compound sentence?",o:["I went to the market.","I went to the market and bought food.","I went because I was hungry.","Going to the market, I bought food."],c:enc(1)},
+    {t:"The antonym of 'Advance' is:",o:["Retreat","Progress","Move","Forward"],c:enc(0)},
+    {t:"The correct spelling is:",o:["Maintenance","Maintainance","Maintanence","Maintinance"],c:enc(0)},
+    {t:"'The committee has submitted _____ report.'",o:["its","it's","their","his"],c:enc(0)},
+    {t:"Which word rhymes with 'though'?",o:["Through","Tough","Dough","Cough"],c:enc(2)},
+    {t:"The meaning of 'Ubiquitous' is:",o:["Rare","Found everywhere","Hidden","Mysterious"],c:enc(1)},
+    {t:"Which sentence uses the correct tense?",o:["She has went to school.","She have gone to school.","She has gone to school.","She had went to school."],c:enc(2)},
+    {t:"The plural of 'phenomenon' is:",o:["Phenomenons","Phenomenas","Phenomena","Phenomenes"],c:enc(2)}
+  ],
+  general: [
+    {t:"Who is the UN Secretary-General as of 2025?",o:["António Guterres","Ban Ki-moon","Kofi Annan","Boutros Boutros-Ghali"],c:enc(0)},
+    {t:"The capital city of Nigeria is:",o:["Lagos","Abuja","Kano","Port Harcourt"],c:enc(1)},
+    {t:"How many continents are on Earth?",o:["5","6","7","8"],c:enc(2)},
+    {t:"Which country is called the 'Giant of Africa'?",o:["South Africa","Nigeria","Egypt","Kenya"],c:enc(1)},
+    {t:"Nigeria's first military coup occurred in:",o:["1960","1963","1966","1975"],c:enc(2)},
+    {t:"Nigeria gained independence in:",o:["1957","1960","1963","1970"],c:enc(1)},
+    {t:"The largest ocean in the world is the:",o:["Atlantic Ocean","Indian Ocean","Arctic Ocean","Pacific Ocean"],c:enc(3)},
+    {t:"Who invented the telephone?",o:["Thomas Edison","Nikola Tesla","Alexander Graham Bell","Michael Faraday"],c:enc(2)},
+    {t:"The chemical symbol for gold is:",o:["Ag","Au","Fe","Gd"],c:enc(1)},
+    {t:"The longest river in Africa is the:",o:["Niger","Nile","Congo","Zambezi"],c:enc(1)},
+    {t:"Which planet is known as the Red Planet?",o:["Venus","Mars","Jupiter","Saturn"],c:enc(1)},
+    {t:"The legislative body in Nigeria is called the:",o:["Parliament","Congress","National Assembly","House of Representatives"],c:enc(2)},
+    {t:"Malaria is caused by a:",o:["Virus","Bacterium","Protozoan","Fungus"],c:enc(2)},
+    {t:"The currency of the United Kingdom is the:",o:["Dollar","Euro","Pound Sterling","Yen"],c:enc(2)},
+    {t:"How many states are in Nigeria?",o:["30","36","40","48"],c:enc(1)},
+    {t:"The Olympic Games originated in:",o:["Rome","Greece","Egypt","China"],c:enc(1)},
+    {t:"The approximate speed of light is:",o:["3×10⁶ m/s","3×10⁸ m/s","3×10¹⁰ m/s","3×10⁴ m/s"],c:enc(1)},
+    {t:"Which gas is most abundant in Earth's atmosphere?",o:["Oxygen","Carbon dioxide","Nitrogen","Argon"],c:enc(2)},
+    {t:"The African Union (AU) was established in:",o:["1963","1975","1999","2002"],c:enc(3)},
+    {t:"The sun rises in the _____ and sets in the _____.",o:["East, West","West, East","North, South","South, North"],c:enc(0)}
+  ],
+  economics: [
+    {t:"The fundamental economic problem is:",o:["Inflation","Scarcity","Unemployment","Poverty"],c:enc(1)},
+    {t:"Opportunity cost is the:",o:["Monetary cost of a good","Best alternative forgone","Total cost of production","Marginal cost incurred"],c:enc(1)},
+    {t:"The Law of Demand states that, all else being equal:",o:["Price ↑ → Demand ↑","Price ↑ → Demand ↓","Supply creates its own demand","Demand creates its own supply"],c:enc(1)},
+    {t:"Equilibrium price occurs where:",o:["Demand > Supply","Supply > Demand","Quantity demanded = Quantity supplied","Government sets the price"],c:enc(2)},
+    {t:"If MPC = 0.8, the Keynesian multiplier is:",o:["2","5","4","10"],c:enc(1)},
+    {t:"M1 money supply includes:",o:["Currency in circulation + demand deposits","Savings and time deposits","Treasury bills only","Government bonds only"],c:enc(0)},
+    {t:"A progressive tax means:",o:["The rate increases as income increases","The same rate applies to all income levels","The rate decreases as income increases","Only high earners pay tax"],c:enc(0)},
+    {t:"The current VAT rate in Nigeria is:",o:["5%","7.5%","10%","15%"],c:enc(1)},
+    {t:"The theory of comparative advantage is attributed to:",o:["Adam Smith","David Ricardo","John M. Keynes","Milton Friedman"],c:enc(1)},
+    {t:"Nigeria's most significant export commodity is:",o:["Cocoa","Crude oil","Groundnut","Palm oil"],c:enc(1)},
+    {t:"Devaluation of a currency makes that country's exports:",o:["Cheaper for foreigners","More expensive for foreigners","Unchanged in price","Illegal to trade"],c:enc(0)},
+    {t:"GDP measures:",o:["Total value of goods & services produced domestically","Income earned by citizens abroad","Total government expenditure","Capital stock in the economy"],c:enc(0)},
+    {t:"Inflation caused by excess demand over supply is called:",o:["Cost-push inflation","Demand-pull inflation","Stagflation","Hyperinflation"],c:enc(1)},
+    {t:"The 'invisible hand' concept was introduced by:",o:["Adam Smith","David Ricardo","John M. Keynes","Milton Friedman"],c:enc(0)},
+    {t:"A government budget is balanced when:",o:["Revenue equals Expenditure","Expenditure exceeds Revenue","Revenue exceeds Expenditure","Public debt equals zero"],c:enc(0)},
+    {t:"The central bank's primary objective is typically:",o:["Profit maximization","Price stability","Tax collection","Trade promotion"],c:enc(1)},
+    {t:"A tariff is a tax imposed on:",o:["Imported goods","Exported goods","Domestically produced goods","All goods and services"],c:enc(0)},
+    {t:"Demand for money falls when:",o:["Real GDP rises","Real interest rates rise","The price level rises","Consumers expect deflation"],c:enc(1)},
+    {t:"Workers employed part-time who desire full-time work are classified as:",o:["Underemployed","Fully employed","Not in the labour force","Cyclically unemployed"],c:enc(0)},
+    {t:"The Law of Supply states that as price increases, all else equal:",o:["Supply decreases","Quantity supplied decreases","Quantity supplied increases","Supply curves shift left"],c:enc(2)}
+  ],
+  chemistry: [
+    {t:"The atomic number of an element equals the number of:",o:["Protons","Neutrons","Electrons","Nucleons"],c:enc(0)},
+    {t:"Which gas is produced when zinc reacts with dilute hydrochloric acid?",o:["Oxygen","Chlorine","Hydrogen","Nitrogen"],c:enc(2)},
+    {t:"The pH of pure water at 25°C is:",o:["0","7","14","10"],c:enc(1)},
+    {t:"The chemical formula of sodium chloride is:",o:["NaCl","NaCl₂","Na₂Cl","NaClO"],c:enc(0)},
+    {t:"Which of these is a noble gas?",o:["Oxygen","Nitrogen","Argon","Chlorine"],c:enc(2)},
+    {t:"The process of rusting requires:",o:["Oxygen only","Water only","Both oxygen and water","Neither oxygen nor water"],c:enc(2)},
+    {t:"The valency of carbon in CO₂ is:",o:["2","4","6","8"],c:enc(1)},
+    {t:"An acid turns blue litmus paper:",o:["Red","Blue","Green","Yellow"],c:enc(0)},
+    {t:"The molar mass of H₂O (H = 1, O = 16) is:",o:["17 g/mol","18 g/mol","19 g/mol","20 g/mol"],c:enc(1)},
+    {t:"Which of the following is an alkane?",o:["C₂H₄ (ethene)","C₂H₆ (ethane)","C₂H₂ (ethyne)","C₆H₆ (benzene)"],c:enc(1)},
+    {t:"The catalyst used in the Haber process is:",o:["Vanadium(V) oxide","Iron","Platinum","Nickel"],c:enc(1)},
+    {t:"One mole of any substance contains approximately:",o:["3.0 × 10²³ particles","6.02 × 10²² particles","6.02 × 10²³ particles","1.66 × 10⁻²⁴ particles"],c:enc(2)},
+    {t:"The element with electron configuration 2, 8, 1 is:",o:["Magnesium","Sodium","Potassium","Calcium"],c:enc(1)},
+    {t:"The type of bond in NaCl is:",o:["Covalent","Metallic","Ionic","Hydrogen"],c:enc(2)},
+    {t:"Oxidation is defined as the:",o:["Gain of electrons","Loss of electrons","Gain of protons","Loss of protons"],c:enc(1)},
+    {t:"The chemical symbol for potassium is:",o:["P","Pt","K","Po"],c:enc(2)},
+    {t:"Which of these is a greenhouse gas?",o:["Oxygen","Nitrogen","Carbon dioxide","Argon"],c:enc(2)},
+    {t:"The functional group of alkanols (alcohols) is:",o:["−COOH","-OH","−CHO","−CO−"],c:enc(1)},
+    {t:"A solution with pH 3 is:",o:["Strongly basic","Weakly basic","Acidic","Neutral"],c:enc(2)},
+    {t:"Distillation separates liquid mixtures based on differences in:",o:["Melting point","Boiling point","Density","Solubility"],c:enc(1)}
+  ],
+  physics: [
+    {t:"The SI unit of force is:",o:["Joule","Newton","Watt","Pascal"],c:enc(1)},
+    {t:"The speed of light in a vacuum is approximately:",o:["3 × 10⁶ m/s","3 × 10⁸ m/s","3 × 10¹⁰ m/s","3 × 10⁴ m/s"],c:enc(1)},
+    {t:"Ohm's Law is expressed as:",o:["V = IR","P = IV","F = ma","E = mc²"],c:enc(0)},
+    {t:"The acceleration due to gravity on Earth is approximately:",o:["9.8 m/s²","10 m/s²","8.9 m/s²","12 m/s²"],c:enc(0)},
+    {t:"Which of these is a vector quantity?",o:["Mass","Speed","Velocity","Time"],c:enc(2)},
+    {t:"The SI unit of electric current is the:",o:["Volt","Ampere","Ohm","Watt"],c:enc(1)},
+    {t:"A lens that converges parallel rays of light is called:",o:["Concave","Convex","Plane","Diverging"],c:enc(1)},
+    {t:"Energy possessed by a moving body is called:",o:["Potential energy","Kinetic energy","Chemical energy","Thermal energy"],c:enc(1)},
+    {t:"The formula for work done is:",o:["W = Fd","W = mv","W = ma","W = mgh"],c:enc(0)},
+    {t:"Sound travels fastest through:",o:["Air","Water","Vacuum","Steel"],c:enc(3)},
+    {t:"The image formed by a plane mirror is:",o:["Real and inverted","Virtual and upright","Real and upright","Virtual and inverted"],c:enc(1)},
+    {t:"The SI unit of power is:",o:["Joule","Watt","Newton","Pascal"],c:enc(1)},
+    {t:"Which colour of visible light has the longest wavelength?",o:["Violet","Blue","Green","Red"],c:enc(3)},
+    {t:"The number of complete oscillations per second is called:",o:["Amplitude","Wavelength","Frequency","Period"],c:enc(2)},
+    {t:"A body in free fall under gravity experiences:",o:["Constant velocity","Constant acceleration","Zero acceleration","Increasing mass"],c:enc(1)},
+    {t:"A transformer operates on the principle of:",o:["Self-induction","Mutual induction","Electrostatic induction","Electromagnetic radiation"],c:enc(1)},
+    {t:"The SI unit of electric charge is the:",o:["Ampere","Coulomb","Volt","Ohm"],c:enc(1)},
+    {t:"Which device converts mechanical energy into electrical energy?",o:["Electric motor","Generator","Battery","Transformer"],c:enc(1)},
+    {t:"The pressure exerted by a liquid column depends on:",o:["Depth only","Density and depth","Volume only","Shape of container only"],c:enc(1)},
+    {t:"The splitting of white light into its constituent colours is called:",o:["Reflection","Refraction","Dispersion","Diffraction"],c:enc(2)}
+  ],
+  biology: [
+    {t:"The powerhouse of the cell is the:",o:["Nucleus","Ribosome","Mitochondrion","Golgi apparatus"],c:enc(2)},
+    {t:"Photosynthesis occurs in the:",o:["Nucleus","Chloroplast","Mitochondria","Ribosome"],c:enc(1)},
+    {t:"The basic structural and functional unit of life is the:",o:["Atom","Molecule","Cell","Tissue"],c:enc(2)},
+    {t:"The human heart has how many chambers?",o:["2","3","4","6"],c:enc(2)},
+    {t:"Which blood group is the universal donor?",o:["A","B","AB","O"],c:enc(3)},
+    {t:"The process by which plants lose water vapour through leaves is called:",o:["Transpiration","Respiration","Photosynthesis","Guttation"],c:enc(0)},
+    {t:"The male reproductive cell is the:",o:["Egg","Sperm","Zygote","Embryo"],c:enc(1)},
+    {t:"Which vitamin is synthesised when the skin is exposed to sunlight?",o:["Vitamin A","Vitamin B","Vitamin C","Vitamin D"],c:enc(3)},
+    {t:"The largest organ in the human body is the:",o:["Heart","Liver","Skin","Brain"],c:enc(2)},
+    {t:"The functional unit of the kidney is the:",o:["Neuron","Alveolus","Nephron","Axon"],c:enc(2)},
+    {t:"The main function of red blood cells is to:",o:["Fight infection","Transport oxygen","Clot blood","Produce antibodies"],c:enc(1)},
+    {t:"The smallest bone in the human body is the:",o:["Femur","Stapes","Radius","Phalanx"],c:enc(1)},
+    {t:"The type of cell division that produces gametes is:",o:["Mitosis","Meiosis","Binary fission","Budding"],c:enc(1)},
+    {t:"Flowering plants are classified as:",o:["Bryophytes","Pteridophytes","Gymnosperms","Angiosperms"],c:enc(3)},
+    {t:"The enzyme that digests starch in the mouth is:",o:["Pepsin","Amylase","Lipase","Trypsin"],c:enc(1)},
+    {t:"The number of chromosomes in a human somatic (body) cell is:",o:["23","46","44","48"],c:enc(1)},
+    {t:"Which gas is absorbed during cellular respiration?",o:["Oxygen","Carbon dioxide","Nitrogen","Hydrogen"],c:enc(0)},
+    {t:"The waxy layer on leaves that reduces water loss is called the:",o:["Epidermis","Cuticle","Stomata","Mesophyll"],c:enc(1)},
+    {t:"Malaria is transmitted through the bite of a female:",o:["Anopheles mosquito","Tsetse fly","Tick","Sandfly"],c:enc(0)},
+    {t:"The brain and spinal cord are part of the:",o:["Endocrine system","Nervous system","Circulatory system","Respiratory system"],c:enc(1)}
+  ],
+  government: [
+    {t:"The doctrine of separation of powers is most associated with:",o:["John Locke","Montesquieu","Jean-Jacques Rousseau","Thomas Hobbes"],c:enc(1)},
+    {t:"Nigeria's 1999 Constitution can best be described as:",o:["Flexible and unwritten","Rigid and written","Unwritten only","Confederal"],c:enc(1)},
+    {t:"ECOWAS was founded in:",o:["1963","1975","1979","1991"],c:enc(1)},
+    {t:"Which Nigerian constitution introduced the presidential system of government?",o:["1963 Constitution","1979 Constitution","1989 Constitution","1999 Constitution"],c:enc(1)},
+    {t:"The rule of law implies that:",o:["Government officials are above the law","Every person is equal before the law","Only citizens are subject to law","Laws are made by the executive alone"],c:enc(1)},
+    {t:"Nigeria's first military coup took place on:",o:["January 15, 1966","July 29, 1966","February 13, 1976","December 31, 1983"],c:enc(0)},
+    {t:"The minimum age requirement for a presidential candidate in Nigeria is:",o:["30 years","35 years","40 years","45 years"],c:enc(1)},
+    {t:"The first political party in Nigeria was the:",o:["NNDP","Action Group","NPC","NCNC"],c:enc(0)},
+    {t:"The Nigerian Civil War ended on:",o:["January 15, 1966","July 29, 1966","January 12, 1970","October 1, 1979"],c:enc(2)},
+    {t:"The UN Security Council has how many permanent members?",o:["5","10","15","7"],c:enc(0)},
+    {t:"The primary function of the legislature is:",o:["Policy implementation","Law-making","Judicial review","Appointment of ministers"],c:enc(1)},
+    {t:"The first political party in Nigeria was the:",o:["NNDP","Action Group (AG)","NPC","NCNC"],c:enc(0)},
+    {t:"The Clifford Constitution of 1922 introduced:",o:["The elective principle","Regionalism","Full federalism","Ministerial responsibility"],c:enc(0)},
+    {t:"The NYSC scheme was established in:",o:["1967","1973","1975","1979"],c:enc(1)},
+    {t:"A vote of no confidence in a parliamentary system typically leads to:",o:["Dissolution of the judiciary","Cabinet resignation or fresh elections","Impeachment of the president","A national referendum"],c:enc(1)},
+    {t:"The OAU (Organisation of African Unity) was founded in:",o:["1958","1963","1975","1980"],c:enc(1)},
+    {t:"Public opinion is best defined as the aggregate of:",o:["Newspaper editorials","Individual attitudes on public issues","Government propaganda","Political party manifestos"],c:enc(1)},
+    {t:"Which of the following is NOT classified as a fundamental human right under the 1999 Constitution?",o:["Freedom of expression","Freedom of religion","Right to free university education","Right to life"],c:enc(2)},
+    {t:"The upper house of Nigeria's National Assembly is the:",o:["House of Representatives","Senate","House of Chiefs","Parliament"],c:enc(1)},
+    {t:"Nigeria's foreign policy is anchored primarily on:",o:["Afrocentrism and non-alignment","Imperialism","Isolationism","Pan-Europeanism"],c:enc(0)}
+  ]
+};
+
+/* decode correct at runtime */
+function getCorrect(q){ return q.c ^ XK; }
+
+/* ──────────────────────────────────────────
+   STATE
+   ─────────────────────────────────────────── */
+let userName='', userEmail='';
+let selSubjects=[];
+let totalSecs=0, timerID=null;
+let curSubj='';
+const curIdx={};    // subject → current question index
+const userAns={};   // subject → array of chosen indices (null = unanswered)
+
+/* ──────────────────────────────────────────
+   SECURITY / ANTI-CHEAT
+   ─────────────────────────────────────────── */
+let warnCount=0;
+let examStarted=false;
+
+// Block right-click
+document.addEventListener('contextmenu', e=>{ if(examStarted) e.preventDefault(); });
+
+// Block common keyboard shortcuts
+document.addEventListener('keydown', e=>{
+  if(!examStarted) return;
+  const blocked = (
+    (e.ctrlKey && ['u','s','a','c','v','p','f','j','i'].includes(e.key.toLowerCase())) ||
+    e.key==='F12' || e.key==='PrintScreen' ||
+    (e.ctrlKey && e.shiftKey && ['i','j','c','k'].includes(e.key.toLowerCase())) ||
+    (e.altKey && e.key==='Tab')
+  );
+  if(blocked){ e.preventDefault(); e.stopPropagation(); showWarn('Keyboard shortcut blocked'); }
+});
+
+// Fullscreen change
+document.addEventListener('fullscreenchange', handleFSChange);
+document.addEventListener('webkitfullscreenchange', handleFSChange);
+document.addEventListener('mozfullscreenchange', handleFSChange);
+
+function handleFSChange(){
+  if(examStarted && !document.fullscreenElement && !document.webkitFullscreenElement){
+    warnCount++;
+    if(warnCount>=3) terminate();
+    else {
+      showWarn(`⚠️ WARNING ${warnCount}/2: You left fullscreen! Requesting fullscreen again…`);
+      setTimeout(()=>{
+        requestFS().catch(()=>{});
+      }, 1500);
+    }
+  }
+}
+
+// Visibility / focus
+document.addEventListener('visibilitychange', ()=>{
+  if(!examStarted) return;
+  if(document.hidden){
+    warnCount++;
+    if(warnCount>=3) terminate();
+    else showWarn(`⚠️ WARNING ${warnCount}/2: Do not switch tabs or apps!`);
+  }
+});
+
+window.addEventListener('blur', ()=>{
+  if(!examStarted) return;
+  showWarn('⚠️ Keep focus on the exam window!');
+});
+
+function showWarn(msg){
+  const b=document.getElementById('warnBanner');
+  b.textContent=msg; b.classList.add('show');
+  setTimeout(()=>b.classList.remove('show'), 3500);
+}
+
+function terminate(){
+  examStarted=false;
+  clearInterval(timerID);
+  document.getElementById('examShell').classList.remove('active');
+  document.getElementById('terminateScreen').classList.add('show');
+  // Notify examiner
+  emailjs.send('service_ertsq4f','template_s0j3egl',{
+    user_name: userName,
+    user_email: userEmail,
+    score:'TERMINATED',total:'—',percentage:'—',
+    time_left:'—',
+    passed_list:'Exam was TERMINATED due to repeated tab switching/fullscreen exit.',
+    failed_list:'',
+    to_email:'oimi6702@gmail.com'
+  }).catch(()=>{});
+}
+
+function requestFS(){
+  const el=document.documentElement;
+  return el.requestFullscreen
+    ? el.requestFullscreen()
+    : el.webkitRequestFullscreen
+    ? el.webkitRequestFullscreen()
+    : el.mozRequestFullScreen
+    ? el.mozRequestFullScreen()
+    : Promise.resolve();
+}
+
+/* ──────────────────────────────────────────
+   LOCK SCREEN → LOGIN
+   ─────────────────────────────────────────── */
+document.getElementById('enterFullscreenBtn').addEventListener('click', ()=>{
+  requestFS().then(()=>{
+    document.getElementById('lockScreen').classList.add('hidden');
+    document.getElementById('loginModal').style.display='flex';
+  }).catch(()=>{
+    // If fullscreen denied, continue anyway (mobile)
+    document.getElementById('lockScreen').classList.add('hidden');
+    document.getElementById('loginModal').style.display='flex';
+  });
+});
+
+/* ──────────────────────────────────────────
+   LOGIN
+   ─────────────────────────────────────────── */
+document.getElementById('loginBtn').addEventListener('click', ()=>{
+  const fn=document.getElementById('firstNameInput').value.trim();
+  const ln=document.getElementById('lastNameInput').value.trim();
+  const em=document.getElementById('emailInput').value.trim();
+  if(!fn||!ln||!em){ alert('Please fill all fields.'); return; }
+  if(!em.includes('@')||!em.includes('.')){ alert('Enter a valid email address.'); return; }
+  userName=`${fn} ${ln}`; userEmail=em;
+  document.getElementById('loginModal').style.display='none';
+  document.getElementById('subjectModal').style.display='flex';
+});
+
+/* ──────────────────────────────────────────
+   SUBJECT SELECTION
+   ─────────────────────────────────────────── */
+document.getElementById('startExamBtn').addEventListener('click', ()=>{
+  const checked=[...document.querySelectorAll('#subjectGrid input:checked')].map(cb=>cb.value);
+  if(checked.length<3){ alert('Please select at least 3 subjects.'); return; }
+  selSubjects=checked;
+  selSubjects.forEach(s=>{ curIdx[s]=0; userAns[s]=new Array(RAW[s].length).fill(null); });
+  totalSecs=selSubjects.length*30*60;
+  document.getElementById('subjectModal').style.display='none';
+  buildExam();
+});
+
+/* ──────────────────────────────────────────
+   BUILD EXAM UI
+   ─────────────────────────────────────────── */
+function buildExam(){
+  const totalQ=selSubjects.reduce((sum,s)=>sum+RAW[s].length,0);
+  document.getElementById('topBadge').textContent=`${selSubjects.length} Subjects · ${totalQ} Qs`;
+
+  // Build tabs
+  const tabsWrap=document.getElementById('subjectTabs');
+  tabsWrap.innerHTML='';
+  selSubjects.forEach((s,i)=>{
+    const btn=document.createElement('button');
+    btn.className='tab-btn'+(i===0?' active':'');
+    btn.dataset.s=s;
+    const names={math:'Mathematics',english:'English',general:'General Paper',economics:'Economics',chemistry:'Chemistry',physics:'Physics',biology:'Biology',government:'Government'};
+    btn.textContent=`${names[s]||s} (${RAW[s].length})`;
+    btn.addEventListener('click',()=>switchSubject(s));
+    tabsWrap.appendChild(btn);
+  });
+
+  examStarted=true;
+  document.getElementById('examShell').classList.add('active');
+  switchSubject(selSubjects[0]);
+  startTimer();
+}
+
+function switchSubject(s){
+  curSubj=s;
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.s===s);
+  });
+  renderProgress();
+  renderQuestion();
+}
+
+/* ──────────────────────────────────────────
+   PROGRESS PILLS
+   ─────────────────────────────────────────── */
+function renderProgress(){
+  const row=document.getElementById('progressRow');
+  row.innerHTML='';
+  RAW[curSubj].forEach((_,i)=>{
+    const p=document.createElement('div');
+    p.className='prog-pill'+(i===curIdx[curSubj]?' current':(userAns[curSubj][i]!==null?' answered':''));
+    p.textContent=i+1;
+    p.addEventListener('click',()=>{ curIdx[curSubj]=i; renderProgress(); renderQuestion(); });
+    row.appendChild(p);
+  });
+}
+
+/* ──────────────────────────────────────────
+   RENDER QUESTION
+   ─────────────────────────────────────────── */
+const LETTERS=['A','B','C','D'];
+
+function renderQuestion(){
+  const s=curSubj, qs=RAW[s], idx=curIdx[s], q=qs[idx];
+  const sel=userAns[s][idx];
+  const names={math:'Mathematics',english:'English',general:'General Paper',economics:'Economics',chemistry:'Chemistry',physics:'Physics',biology:'Biology',government:'Government'};
+
+  let opts='';
+  q.o.forEach((opt,i)=>{
+    opts+=`<label class="opt-label">
+      <input type="radio" name="opt_${s}" value="${i}" ${sel===i?'checked':''}>
+      <span class="opt-letter">${LETTERS[i]}</span>
+      <span class="opt-text">${opt}</span>
+    </label>`;
+  });
+
+  document.getElementById('questionCard').innerHTML=`
+    <div class="q-card">
+      <div class="q-meta">
+        <div class="q-num">${idx+1}</div>
+        <span class="q-subject-tag">${names[s]||s}</span>
+        <span class="q-of">Q${idx+1} of ${qs.length}</span>
+      </div>
+      <div class="q-text">${q.t}</div>
+      <div class="options-list" id="optsList">${opts}</div>
+    </div>`;
+
+  document.querySelectorAll(`input[name="opt_${s}"]`).forEach(r=>{
+    r.addEventListener('change', e=>{
+      userAns[s][idx]=parseInt(e.target.value);
+      renderProgress();
+    });
+  });
+
+  // Nav
+  document.getElementById('prevBtn').disabled=(idx===0);
+  document.getElementById('nextBtn').disabled=(idx===qs.length-1);
+}
+
+document.getElementById('prevBtn').addEventListener('click',()=>{
+  if(curIdx[curSubj]>0){ curIdx[curSubj]--; renderProgress(); renderQuestion(); }
+});
+document.getElementById('nextBtn').addEventListener('click',()=>{
+  const qs=RAW[curSubj];
+  if(curIdx[curSubj]<qs.length-1){ curIdx[curSubj]++; renderProgress(); renderQuestion(); }
+});
+
+/* ──────────────────────────────────────────
+   TIMER
+   ─────────────────────────────────────────── */
+function startTimer(){
+  const disp=document.getElementById('timerDisplay');
+  function fmt(s){ return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+  disp.textContent=fmt(totalSecs);
+  timerID=setInterval(()=>{
+    if(totalSecs>0){
+      totalSecs--;
+      disp.textContent=fmt(totalSecs);
+      if(totalSecs<=300) disp.classList.add('danger');
+    } else {
+      clearInterval(timerID);
+      alert('⏰ Time is up! Your exam will now be submitted.');
+      submitExam();
+    }
+  },1000);
+}
+
+/* ──────────────────────────────────────────
+   SUBMIT
+   ─────────────────────────────────────────── */
+document.getElementById('submitBtn').addEventListener('click',()=>{
+  const totalQ=selSubjects.reduce((s,j)=>s+RAW[j].length,0);
+  const answered=selSubjects.reduce((s,j)=>s+userAns[j].filter(a=>a!==null).length,0);
+  const unanswered=totalQ-answered;
+  if(unanswered>0){
+    if(!confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) return;
+  }
+  submitExam();
+});
+
+function submitExam(){
+  clearInterval(timerID);
+  examStarted=false;
+  let totalCorrect=0, totalQ=0;
+  const passList=[], failList=[];
+  const subjectLines=[];
+
+  selSubjects.forEach(s=>{
+    let c=0;
+    RAW[s].forEach((q,i)=>{
+      totalQ++;
+      const chosen=userAns[s][i];
+      const correct=getCorrect(q);
+      const ok=(chosen===correct);
+      if(ok){ c++; totalCorrect++; }
+      const chosenLabel=chosen!==null?q.o[chosen]:'No answer';
+      const correctLabel=q.o[correct];
+      const entry=`${s.toUpperCase()} Q${i+1}: ${q.t} | Your: ${chosenLabel} ${ok?'✅':'❌'} | Correct: ${correctLabel}`;
+      if(ok) passList.push(entry); else failList.push(entry);
+    });
+    subjectLines.push(`${s.toUpperCase()}: ${c}/${RAW[s].length}`);
+  });
+
+  const pct=((totalCorrect/totalQ)*100).toFixed(1);
+  const grade=pct>=70?'DISTINCTION':pct>=50?'PASS':'FAIL';
+  const gradeColor=pct>=70?'var(--success)':pct>=50?'var(--gold)':'var(--danger)';
+
+  const panel=document.getElementById('resultPanel');
+  panel.innerHTML=`
+    <div class="score-big">${totalCorrect}/${totalQ}</div>
+    <div class="score-label">${pct}% — <strong style="color:${gradeColor}">${grade}</strong></div>
+    <div style="margin-top:14px;font-size:0.85rem;color:var(--subtext);line-height:1.8;">
+      ${subjectLines.join(' &nbsp;|&nbsp; ')}
+    </div>
+    <div style="margin-top:12px;font-size:0.8rem;color:var(--muted);">📧 Full results sent to your examiner</div>`;
+  panel.classList.add('show');
+
+  emailjs.send('service_ertsq4f','template_s0j3egl',{
+    user_name:userName, user_email:userEmail,
+    score:totalCorrect, total:totalQ, percentage:pct,
+    time_left:document.getElementById('timerDisplay').textContent,
+    passed_list:passList.length?passList.join('\n'):'None',
+    failed_list:failList.length?failList.join('\n'):'None',
+    to_email:'oimi6702@gmail.com'
+  }).then(()=>alert('📧 Results emailed to examiner successfully!'))
+    .catch(err=>{ console.error(err); alert('⚠️ Email error. Results are saved above.'); });
+}
+
+/* ──────────────────────────────────────────
+   SAFE CALCULATOR (no eval)
+   ─────────────────────────────────────────── */
+let calcExpr='';
+const calcScreen=document.getElementById('calcScreen');
+
+function safeCalc(expr){
+  /* Tokenise and evaluate: handles +−×÷ and decimal numbers only */
+  try{
+    const tokens=expr.replace(/×/g,'*').replace(/÷/g,'/').match(/[+\-*/]|[\d.]+/g);
+    if(!tokens) return 'Error';
+    let nums=[parseFloat(tokens[0])], ops=[];
+    for(let i=1;i<tokens.length;i+=2){
+      const op=tokens[i], num=parseFloat(tokens[i+1]);
+      if(isNaN(num)) return 'Error';
+      if(op==='*'||op==='/'){ nums[nums.length-1]=op==='*'?nums[nums.length-1]*num:nums[nums.length-1]/num; }
+      else{ ops.push(op); nums.push(num); }
+    }
+    let result=nums[0];
+    for(let i=0;i<ops.length;i++) result=ops[i]==='+'?result+nums[i+1]:result-nums[i+1];
+    return isFinite(result)?parseFloat(result.toFixed(8)).toString():'Error';
+  }catch(e){ return 'Error'; }
+}
+
+document.getElementById('openCalcBtn').addEventListener('click',()=>{ document.getElementById('calcOverlay').classList.add('show'); });
+document.getElementById('closeCalcBtn').addEventListener('click',()=>{ document.getElementById('calcOverlay').classList.remove('show'); });
+
+document.querySelectorAll('.calc-grid [data-num]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const v=b.dataset.num;
+    if(calcExpr==='Error') calcExpr='';
+    calcExpr+=v; calcScreen.value=calcExpr;
+  });
+});
+document.querySelectorAll('.calc-grid [data-op]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const op=b.dataset.op;
+    if(op==='='){
+      const res=safeCalc(calcExpr);
+      calcScreen.value=res; calcExpr=res==='Error'?'':res;
+    } else if(op==='⌫'){
+      calcExpr=calcExpr.slice(0,-1)||'0'; calcScreen.value=calcExpr;
+    } else {
+      calcExpr+=op; calcScreen.value=calcExpr;
+    }
+  });
+});
+document.getElementById('calcClear').addEventListener('click',()=>{ calcExpr=''; calcScreen.value='0'; });
+
+})();
+</script>
+</body>
+</html>
