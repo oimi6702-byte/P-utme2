@@ -1,1792 +1,748 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>UNILAG Post-UTME CBT Simulator V2</title>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
-    </script>
-    <style>
-        /* ===== RESET & BASE ===== */
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        :root {
-            --primary: #8B0000;
-            --primary-light: #a31515;
-            --primary-dark: #5a0000;
-            --gold: #c9a84c;
-            --gold-light: #e8d5a3;
-            --bg: #f4f1ec;
-            --card-bg: #ffffff;
-            --text: #1e1e1e;
-            --text-light: #4a4a4a;
-            --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-            --radius: 16px;
-            --transition: 0.3s ease;
-            --font: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
-        }
-        html {
-            font-size: 16px;
-            scroll-behavior: smooth;
-        }
-        body {
-            font-family: var(--font);
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            margin: 0;
-        }
-        /* ===== APP CONTAINER ===== */
-        #app {
-            width: 100%;
-            max-width: 960px;
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 28px 32px;
-            position: relative;
-            transition: all var(--transition);
-            min-height: 80vh;
-        }
-        @media (max-width: 640px) {
-            #app {
-                padding: 16px 14px;
-                border-radius: 12px;
-                min-height: 90vh;
-            }
-        }
-
-        /* ===== SCREENS ===== */
-        .screen {
-            display: none;
-            animation: fadeUp 0.4s ease;
-        }
-        .screen.active {
-            display: block;
-        }
-        @keyframes fadeUp {
-            0% {
-                opacity: 0;
-                transform: translateY(18px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* ===== HEADINGS ===== */
-        h1,
-        h2,
-        h3 {
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-        h1 {
-            font-size: 2rem;
-            color: var(--primary);
-        }
-        h2 {
-            font-size: 1.6rem;
-            margin-bottom: 0.5rem;
-        }
-        h3 {
-            font-size: 1.2rem;
-            margin-bottom: 0.5rem;
-            color: var(--primary-dark);
-        }
-        .subhead {
-            color: var(--text-light);
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
-        }
-        .unilag-badge {
-            display: inline-block;
-            background: var(--primary);
-            color: #fff;
-            font-weight: 600;
-            font-size: 0.7rem;
-            padding: 4px 14px;
-            border-radius: 30px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-
-        /* ===== FORM ELEMENTS ===== */
-        .form-group {
-            margin-bottom: 16px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            font-size: 0.85rem;
-            margin-bottom: 4px;
-            color: var(--text-light);
-        }
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px 14px;
-            border: 2px solid #e0ddd8;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: border var(--transition);
-            background: #fafaf8;
-            font-family: var(--font);
-        }
-        .form-group input:focus,
-        .form-group select:focus {
-            border-color: var(--primary);
-            outline: none;
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(139, 0, 0, 0.08);
-        }
-        .form-group .error-msg {
-            color: #d32f2f;
-            font-size: 0.8rem;
-            margin-top: 4px;
-            display: none;
-        }
-        .form-group.error input,
-        .form-group.error select {
-            border-color: #d32f2f;
-        }
-        .form-group.error .error-msg {
-            display: block;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        @media (max-width: 480px) {
-            .form-row {
-                grid-template-columns: 1fr;
-                gap: 0;
-            }
-        }
-
-        /* ===== BUTTONS ===== */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 28px;
-            border: none;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all var(--transition);
-            background: #eae7e1;
-            color: var(--text);
-            font-family: var(--font);
-            text-decoration: none;
-        }
-        .btn-primary {
-            background: var(--primary);
-            color: #fff;
-        }
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 0, 0, 0.25);
-        }
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .btn-gold {
-            background: var(--gold);
-            color: #1e1e1e;
-        }
-        .btn-gold:hover {
-            background: #b8942e;
-            transform: translateY(-2px);
-        }
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-        .btn-outline:hover {
-            background: var(--primary);
-            color: #fff;
-        }
-        .btn-success {
-            background: #2e7d32;
-            color: #fff;
-        }
-        .btn-success:hover {
-            background: #1b5e20;
-        }
-        .btn-danger {
-            background: #c62828;
-            color: #fff;
-        }
-        .btn-danger:hover {
-            background: #b71c1c;
-        }
-        .btn-sm {
-            padding: 6px 16px;
-            font-size: 0.85rem;
-        }
-        .btn-block {
-            width: 100%;
-            justify-content: center;
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        /* ===== SUBJECT SELECTION ===== */
-        .subject-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 12px;
-            margin: 20px 0;
-        }
-        .subject-card {
-            padding: 16px 12px;
-            border-radius: 12px;
-            border: 2.5px solid #e0ddd8;
-            text-align: center;
-            cursor: pointer;
-            transition: all var(--transition);
-            background: #fafaf8;
-            font-weight: 600;
-            font-size: 0.95rem;
-            user-select: none;
-        }
-        .subject-card:hover {
-            border-color: var(--gold);
-            transform: translateY(-3px);
-        }
-        .subject-card.selected {
-            border-color: var(--primary);
-            background: #fff5f5;
-            box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.12);
-            color: var(--primary);
-        }
-        .subject-card .badge {
-            display: block;
-            font-size: 0.65rem;
-            font-weight: 400;
-            color: var(--text-light);
-            margin-top: 4px;
-        }
-        .subject-card.selected .badge {
-            color: var(--primary);
-        }
-        .subject-count {
-            font-size: 0.9rem;
-            color: var(--text-light);
-            margin-top: 8px;
-        }
-        .subject-count strong {
-            color: var(--primary);
-        }
-
-        /* ===== INSTRUCTIONS ===== */
-        .instructions-box {
-            background: #f8f6f3;
-            border-radius: 12px;
-            padding: 20px 24px;
-            margin: 16px 0;
-            border-left: 5px solid var(--gold);
-        }
-        .instructions-box ul {
-            list-style: none;
-            padding: 0;
-        }
-        .instructions-box li {
-            padding: 6px 0;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-        }
-        .instructions-box li:last-child {
-            border-bottom: none;
-        }
-        .instructions-box li::before {
-            content: "▸";
-            color: var(--gold);
-            font-weight: 700;
-        }
-        .candidate-summary {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px 24px;
-            font-size: 0.95rem;
-            margin: 12px 0;
-        }
-        .candidate-summary strong {
-            color: var(--primary-dark);
-        }
-        @media (max-width: 480px) {
-            .candidate-summary {
-                grid-template-columns: 1fr;
-                gap: 2px;
-            }
-        }
-
-        /* ===== EXAM ===== */
-        .exam-header {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #eee;
-            margin-bottom: 16px;
-        }
-        .exam-header .timer {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--primary);
-            background: #fff5f5;
-            padding: 6px 18px;
-            border-radius: 30px;
-            border: 2px solid var(--primary);
-            font-variant-numeric: tabular-nums;
-        }
-        .exam-header .timer.warning {
-            color: #c62828;
-            border-color: #c62828;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
-        .exam-header .q-counter {
-            font-weight: 600;
-            color: var(--text-light);
-        }
-        .exam-header .q-counter strong {
-            color: var(--text);
-        }
-
-        .question-container {
-            padding: 8px 0 16px;
-        }
-        .question-text {
-            font-size: 1.15rem;
-            font-weight: 500;
-            line-height: 1.6;
-            margin-bottom: 20px;
-            padding: 12px 16px;
-            background: #fafaf8;
-            border-radius: 10px;
-            border-left: 4px solid var(--gold);
-        }
-        .question-subject {
-            display: inline-block;
-            background: var(--primary);
-            color: #fff;
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 2px 14px;
-            border-radius: 30px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-        }
-        .options {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 8px 0 20px;
-        }
-        .option {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 12px 18px;
-            border-radius: 10px;
-            border: 2px solid #e8e5df;
-            cursor: pointer;
-            transition: all var(--transition);
-            background: #fcfcfb;
-        }
-        .option:hover {
-            border-color: var(--gold);
-            background: #faf8f4;
-        }
-        .option.selected {
-            border-color: var(--primary);
-            background: #fff5f5;
-            box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.08);
-        }
-        .option input[type="radio"] {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #bbb;
-            border-radius: 50%;
-            flex-shrink: 0;
-            transition: all var(--transition);
-            position: relative;
-            cursor: pointer;
-        }
-        .option input[type="radio"]:checked {
-            border-color: var(--primary);
-            background: var(--primary);
-        }
-        .option input[type="radio"]:checked::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #fff;
-        }
-        .option .label {
-            flex: 1;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-
-        .exam-nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 2px solid #eee;
-        }
-        .exam-nav .nav-btns {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        /* ===== QUESTION PALETTE ===== */
-        .palette {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 12px 0 8px;
-            margin-top: 12px;
-            border-top: 2px solid #eee;
-        }
-        .palette .pill {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid #ddd;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all var(--transition);
-            background: #fafaf8;
-            color: var(--text);
-        }
-        .palette .pill:hover {
-            transform: scale(1.05);
-            border-color: var(--gold);
-        }
-        .palette .pill.active {
-            border-color: var(--primary);
-            background: var(--primary);
-            color: #fff;
-            transform: scale(1.08);
-        }
-        .palette .pill.answered {
-            border-color: #2e7d32;
-            background: #e8f5e9;
-            color: #1b5e20;
-        }
-        .palette .pill.active.answered {
-            background: var(--primary);
-            color: #fff;
-            border-color: var(--primary);
-        }
-        .palette-legend {
-            display: flex;
-            gap: 18px;
-            font-size: 0.8rem;
-            color: var(--text-light);
-            flex-wrap: wrap;
-            margin-bottom: 6px;
-        }
-        .palette-legend span {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .palette-legend .dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            border: 2px solid #ddd;
-            display: inline-block;
-        }
-        .palette-legend .dot.answered-dot {
-            background: #e8f5e9;
-            border-color: #2e7d32;
-        }
-        .palette-legend .dot.active-dot {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-
-        /* ===== RESULTS ===== */
-        .result-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 16px;
-            margin: 20px 0;
-        }
-        .result-card {
-            background: #f8f6f3;
-            border-radius: 12px;
-            padding: 16px 12px;
-            text-align: center;
-            border: 1px solid #eee;
-        }
-        .result-card .number {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        .result-card .label {
-            font-size: 0.85rem;
-            color: var(--text-light);
-            margin-top: 4px;
-        }
-        .result-card.pass .number {
-            color: #2e7d32;
-        }
-        .result-card.fail .number {
-            color: #c62828;
-        }
-
-        .review-item {
-            background: #fafaf8;
-            border-radius: 10px;
-            padding: 16px 18px;
-            margin-bottom: 14px;
-            border-left: 4px solid #2e7d32;
-            border-left-color: #c62828;
-        }
-        .review-item.correct {
-            border-left-color: #2e7d32;
-        }
-        .review-item .r-q {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-        .review-item .r-answer {
-            font-size: 0.95rem;
-            color: var(--text-light);
-        }
-        .review-item .r-answer strong {
-            color: var(--text);
-        }
-        .review-item .r-explanation {
-            margin-top: 8px;
-            padding: 8px 12px;
-            background: #f0ede8;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            color: var(--text-light);
-        }
-        .review-item .r-explanation strong {
-            color: var(--text);
-        }
-
-        /* ===== UTILITY ===== */
-        .text-center {
-            text-align: center;
-        }
-        .mt-8 {
-            margin-top: 8px;
-        }
-        .mt-16 {
-            margin-top: 16px;
-        }
-        .mt-24 {
-            margin-top: 24px;
-        }
-        .mb-16 {
-            margin-bottom: 16px;
-        }
-        .gap-8 {
-            gap: 8px;
-        }
-        .flex-center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .flex-wrap {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .hidden {
-            display: none !important;
-        }
-        .w-full {
-            width: 100%;
-        }
-
-        /* ===== TOAST ===== */
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e1e1e;
-            color: #fff;
-            padding: 14px 28px;
-            border-radius: 30px;
-            font-weight: 500;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-            z-index: 999;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.4s ease;
-            max-width: 90%;
-            text-align: center;
-        }
-        .toast.show {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateX(-50%) translateY(0);
-        }
-        .toast.success {
-            background: #2e7d32;
-        }
-        .toast.error {
-            background: #c62828;
-        }
-        .toast.info {
-            background: #0d47a1;
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 640px) {
-            h1 {
-                font-size: 1.6rem;
-            }
-            h2 {
-                font-size: 1.3rem;
-            }
-            .question-text {
-                font-size: 1rem;
-                padding: 10px 12px;
-            }
-            .option {
-                padding: 10px 14px;
-            }
-            .exam-header .timer {
-                font-size: 1.1rem;
-                padding: 4px 14px;
-            }
-            .subject-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
-            .result-summary {
-                grid-template-columns: 1fr 1fr;
-            }
-            .palette .pill {
-                width: 34px;
-                height: 34px;
-                font-size: 0.75rem;
-            }
-            .exam-nav {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .exam-nav .nav-btns {
-                justify-content: center;
-            }
-            .btn {
-                padding: 10px 20px;
-                font-size: 0.9rem;
-            }
-        }
-        @media (max-width: 400px) {
-            #app {
-                padding: 12px 10px;
-            }
-            .subject-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-            .subject-card {
-                padding: 12px 8px;
-                font-size: 0.85rem;
-            }
-            .result-summary {
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
-            .result-card .number {
-                font-size: 1.8rem;
-            }
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f0ede8;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--gold);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #b8942e;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>UNILAG CBT Portal – Vanilla</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      color: #e2e8f0;
+      user-select: none;
+      overflow-x: hidden;
+    }
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 16px;
+      padding: 32px;
+    }
+    input, select {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(124,58,237,0.4);
+      color: #e2e8f0;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      width: 100%;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+    .btn-purple {
+      background: linear-gradient(135deg, #7c3aed, #5b21b6);
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 10px;
+    }
+    .btn-disabled {
+      background: rgba(124,58,237,0.2);
+      color: rgba(255,255,255,0.3);
+      cursor: not-allowed;
+    }
+    .label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #a78bfa;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .timer { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .violation-badge {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.2);
+      padding: 4px 12px;
+      border-radius: 8px;
+      color: #fca5a5;
+    }
+    .palette-btn {
+      border-radius: 6px;
+      padding: 6px 0;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: #94a3b8;
+    }
+    .palette-btn.answered { background: #10b981; color: #fff; }
+    .palette-btn.flagged { background: #f59e0b; color: #fff; }
+    .palette-btn.current { background: #7c3aed; color: #fff; }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center; z-index: 9999;
+    }
+    .modal-box {
+      background: rgba(26,26,46,0.95); backdrop-filter: blur(20px);
+      border: 1px solid rgba(124,58,237,0.5); border-radius: 16px;
+      padding: 24px; max-width: 380px; width: 90%; text-align: center;
+    }
+    .calc-display {
+      background: #0f0f23; border-radius: 8px; padding: 8px 12px;
+      color: #e2e8f0; font-size: 22px; text-align: right;
+      margin-bottom: 8px; min-height: 40px; word-break: break-all;
+    }
+    .calc-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+    .calc-btn { padding: 10px 0; border-radius: 8px; font-size: 15px; font-weight: 600; background: #2d2d4e; color: #fff; }
+    .calc-op { background: #7c3aed; }
+    .calc-clear { background: #dc2626; }
+    @media (max-width: 768px) {
+      .exam-layout { flex-direction: column; }
+      .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; }
+    }
+  </style>
 </head>
 <body>
+  <div id="root" class="app"></div>
 
-    <div id="app">
-        <!-- ===== TOAST ===== -->
-        <div id="toast" class="toast"></div>
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-        <!-- ===== SCREEN: LOGIN ===== -->
-        <div id="screen-login" class="screen active">
-            <div class="text-center">
-                <span class="unilag-badge">UNILAG</span>
-                <h1>Post-UTME CBT Simulator</h1>
-                <p class="subhead">University of Lagos · 2026/2027 Session</p>
-            </div>
-            <form id="loginForm" autocomplete="off">
-                <div class="form-row">
-                    <div class="form-group" id="fg-firstname">
-                        <label>First Name</label>
-                        <input type="text" id="firstName" placeholder="e.g. Chidi" required />
-                        <div class="error-msg">First name is required</div>
-                    </div>
-                    <div class="form-group" id="fg-lastname">
-                        <label>Last Name</label>
-                        <input type="text" id="lastName" placeholder="e.g. Okonkwo" required />
-                        <div class="error-msg">Last name is required</div>
-                    </div>
-                </div>
-                <div class="form-group" id="fg-email">
-                    <label>Email Address</label>
-                    <input type="email" id="email" placeholder="you@example.com" required />
-                    <div class="error-msg">Valid email is required</div>
-                </div>
-                <div class="form-group" id="fg-phone">
-                    <label>Phone Number</label>
-                    <input type="tel" id="phone" placeholder="e.g. 08012345678" required />
-                    <div class="error-msg">Phone number is required</div>
-                </div>
-                <div class="form-group" id="fg-course">
-                    <label>Course Applied For</label>
-                    <input type="text" id="course" placeholder="e.g. Computer Science" required />
-                    <div class="error-msg">Course is required</div>
-                </div>
-                <div class="form-group" id="fg-pin">
-                    <label>Exam PIN</label>
-                    <input type="password" id="examPin" placeholder="Enter your exam PIN" required />
-                    <div class="error-msg">PIN is required (demo: UNILAG2026)</div>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block mt-16">Proceed to Subject Selection</button>
-            </form>
-            <p class="text-center mt-8" style="font-size:0.8rem;color:var(--text-light);">Demo PIN: <strong>UNILAG2026</strong></p>
-        </div>
+  <script>
+    (() => {
+      // ⚠️ YOUR EMAILJS CREDENTIALS (already set)
+      const EMAILJS_USER_ID = "mt3HJUIfu1kcIMjGb";        // your public key
+      const EMAILJS_SERVICE_ID = "service_rrx6495";       // your Gmail service
+      const EMAILJS_TEMPLATE_ID = "template_gf9ilrc";     // your template ID
+      const ADMIN_EMAIL = "oimi6702@gmail.com";           // where results go
 
-        <!-- ===== SCREEN: SUBJECT SELECTION ===== -->
-        <div id="screen-subjects" class="screen">
-            <div class="text-center">
-                <span class="unilag-badge">Step 2</span>
-                <h2>Select Your Subjects</h2>
-                <p class="subhead">Choose at least 3 subjects. You must answer 20 questions per subject.</p>
-            </div>
-            <div class="subject-grid" id="subjectGrid">
-                <!-- Rendered by JS -->
-            </div>
-            <div class="subject-count" id="subjectCount">Selected: <strong>0</strong> subjects (minimum 3)</div>
-            <button id="btnStartExam" class="btn btn-primary btn-block mt-16" disabled>Begin Exam</button>
-            <button id="btnBackToLogin" class="btn btn-outline btn-block mt-8">← Back to Login</button>
-        </div>
+      // Initialize EmailJS
+      emailjs.init(EMAILJS_USER_ID);
 
-        <!-- ===== SCREEN: INSTRUCTIONS ===== -->
-        <div id="screen-instructions" class="screen">
-            <div class="text-center">
-                <span class="unilag-badge">Step 3</span>
-                <h2>Exam Instructions</h2>
-            </div>
-            <div class="instructions-box">
-                <ul>
-                    <li>You have selected <strong id="inst-subject-count">0</strong> subjects.</li>
-                    <li>Total questions: <strong id="inst-total-q">0</strong> (20 per subject).</li>
-                    <li>Time allowed: <strong id="inst-total-time">0</strong> minutes.</li>
-                    <li>Each question has <strong>one correct answer</strong>.</li>
-                    <li>You can navigate using <strong>Previous / Next</strong> or the <strong>question palette</strong>.</li>
-                    <li>Your answers are <strong>auto-saved</strong> as you select them.</li>
-                    <li>The exam will <strong>auto-submit</strong> when time runs out.</li>
-                    <li>No answer will be shown until you submit.</li>
-                    <li>You can change your answers anytime before submission.</li>
-                </ul>
-            </div>
-            <div class="candidate-summary" id="candidateSummary">
-                <!-- Rendered by JS -->
-            </div>
-            <div class="flex-wrap" style="justify-content:space-between;margin-top:16px;">
-                <button id="btnBackToSubjects" class="btn btn-outline">← Back</button>
-                <button id="btnBeginExam" class="btn btn-primary">Start Exam →</button>
-            </div>
-        </div>
+      // ─── QUESTION BANK: 15 Math, 15 English, 10 General Knowledge ──
+      const QUESTION_BANK = {
+        Mathematics: [
+          { id:"m1", type:"mcq", question:"Simplify: 3x² + 2x² − x²", options:["4x²","5x²","6x²","3x²"], answer:"4x²" },
+          { id:"m2", type:"mcq", question:"If 2x + 3 = 11, find x", options:["3","4","5","6"], answer:"4" },
+          { id:"m3", type:"mcq", question:"What is the simple interest on ₦5,000 at 8% per annum for 3 years?", options:["₦1,000","₦1,200","₦1,500","₦2,000"], answer:"₦1,200" },
+          { id:"m4", type:"mcq", question:"Find the value of x: 5x − 7 = 3x + 9", options:["6","7","8","9"], answer:"8" },
+          { id:"m5", type:"mcq", question:"A trader bought goods for ₦8,000 and sold for ₦10,000. Find the percentage profit.", options:["20%","25%","15%","30%"], answer:"25%" },
+          { id:"m6", type:"mcq", question:"Evaluate: log₁₀ 1000", options:["2","3","4","10"], answer:"3" },
+          { id:"m7", type:"mcq", question:"The sum of interior angles of a hexagon is:", options:["540°","620°","720°","800°"], answer:"720°" },
+          { id:"m8", type:"mcq", question:"If P = {2,4,6,8} and Q = {1,2,3,4}, find P ∩ Q", options:["{2,4}","{1,2,3,4,6,8}","{6,8}","{1,3}"], answer:"{2,4}" },
+          { id:"m9", type:"saq", question:"If the area of a square is 64 cm², what is the length of one side? (write in digits)", answer:"8" },
+          { id:"m10", type:"saq", question:"A man scores 15 out of 20. What is his percentage score? (write in digits only, no % sign)", answer:"75" },
+          { id:"m11", type:"mcq", question:"Solve: 3(x+2) = 21", options:["5","6","7","8"], answer:"7" },
+          { id:"m12", type:"mcq", question:"The slope of the line y = 2x + 5 is:", options:["2","5","-2","-5"], answer:"2" },
+          { id:"m13", type:"saq", question:"If a triangle has angles 50° and 60°, what is the third angle? (digits only)", answer:"70" },
+          { id:"m14", type:"mcq", question:"What is 20% of 150?", options:["20","30","35","25"], answer:"30" },
+          { id:"m15", type:"mcq", question:"Factorise: x² - 9", options:["(x-3)(x+3)","(x-9)(x+1)","(x-3)(x-3)","(x+9)(x-1)"], answer:"(x-3)(x+3)" },
+        ],
+        English: [
+          { id:"e1", type:"mcq", question:"Choose the word closest in meaning to BENEVOLENT:", options:["Cruel","Generous","Selfish","Hostile"], answer:"Generous" },
+          { id:"e2", type:"mcq", question:"Choose the antonym of TURBULENT:", options:["Calm","Stormy","Rough","Wild"], answer:"Calm" },
+          { id:"e3", type:"mcq", question:"Select the correct sentence:", options:["Each of the boys have a pen","Each of the boys has a pen","Each of the boy have a pen","Each of the boys are having a pen"], answer:"Each of the boys has a pen" },
+          { id:"e4", type:"mcq", question:"The plural of 'phenomenon' is:", options:["Phenomenons","Phenomenas","Phenomena","Phenomenes"], answer:"Phenomena" },
+          { id:"e5", type:"mcq", question:"Choose the word opposite in meaning to LOQUACIOUS:", options:["Talkative","Verbose","Taciturn","Garrulous"], answer:"Taciturn" },
+          { id:"e6", type:"mcq", question:"Identify the figure of speech: 'The wind whispered through the trees'", options:["Simile","Metaphor","Personification","Hyperbole"], answer:"Personification" },
+          { id:"e7", type:"mcq", question:"Choose the correct spelling:", options:["Accomodate","Accommodate","Acomodate","Acommodate"], answer:"Accommodate" },
+          { id:"e8", type:"mcq", question:"Fill in: She has been studying _____ morning.", options:["since","from","for","during"], answer:"since" },
+          { id:"e9", type:"saq", question:"What is the one-word synonym for 'very hungry'? (lowercase)", answer:"famished" },
+          { id:"e10", type:"saq", question:"Complete the proverb: 'A stitch in time saves ___' (write the number in words)", answer:"nine" },
+          { id:"e11", type:"mcq", question:"Which is the correct comparative form of 'good'?", options:["badder","gooder","better","best"], answer:"better" },
+          { id:"e12", type:"mcq", question:"Identify the part of speech of the word in caps: 'She RUNS daily.'", options:["Noun","Verb","Adjective","Adverb"], answer:"Verb" },
+          { id:"e13", type:"saq", question:"Give the antonym of 'ascend' (lowercase)", answer:"descend" },
+          { id:"e14", type:"mcq", question:"Choose the word that means 'to make a mistake':", options:["Erratic","Errand","Err","Erode"], answer:"Err" },
+          { id:"e15", type:"mcq", question:"Select the correctly punctuated sentence:", options:["Its a beautiful day.","It's a beautiful day.","Its' a beautiful day.","It is' a beautiful day."], answer:"It's a beautiful day." },
+        ],
+        "General Knowledge": [
+          { id:"g1", type:"mcq", question:"Nigeria gained independence in:", options:["1960","1963","1914","1956"], answer:"1960" },
+          { id:"g2", type:"mcq", question:"The current Governor of Lagos State (2026) is:", options:["Babajide Sanwo-Olu","Akinwunmi Ambode","Obafemi Awolowo","Bola Tinubu"], answer:"Babajide Sanwo-Olu" },
+          { id:"g3", type:"mcq", question:"Which planet is known as the Red Planet?", options:["Venus","Mars","Jupiter","Saturn"], answer:"Mars" },
+          { id:"g4", type:"mcq", question:"The headquarters of ECOWAS is located in:", options:["Accra","Lagos","Abuja","Dakar"], answer:"Abuja" },
+          { id:"g5", type:"mcq", question:"Who was the first President of Nigeria?", options:["Nnamdi Azikiwe","Abubakar Tafawa Balewa","Obafemi Awolowo","Yakubu Gowon"], answer:"Nnamdi Azikiwe" },
+          { id:"g6", type:"mcq", question:"The process by which green plants make food is called:", options:["Respiration","Transpiration","Photosynthesis","Digestion"], answer:"Photosynthesis" },
+          { id:"g7", type:"mcq", question:"Which of these is NOT a primary colour of light?", options:["Red","Green","Yellow","Blue"], answer:"Yellow" },
+          { id:"g8", type:"mcq", question:"The United Nations was founded in:", options:["1944","1945","1946","1948"], answer:"1945" },
+          { id:"g9", type:"saq", question:"What is the capital city of Nigeria? (one word)", answer:"Abuja" },
+          { id:"g10", type:"saq", question:"How many states are in Nigeria? (write in digits)", answer:"36" },
+        ],
+      };
 
-        <!-- ===== SCREEN: EXAM ===== -->
-        <div id="screen-exam" class="screen">
-            <div class="exam-header">
+      // ─── UTILS ─────────────────────────────────────────────────
+      function shuffleArray(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      function buildExam() {
+        const allQ = [];
+        for (const [subj, qs] of Object.entries(QUESTION_BANK)) {
+          // USE ALL QUESTIONS (no slicing)
+          qs.forEach(q => allQ.push({ ...q, subject: subj }));
+        }
+        return shuffleArray(allQ);
+      }
+
+      const formatTime = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+      // ─── STATE (NIN removed) ──────────────────────────────────
+      const state = {
+        stage: 'login',
+        candidate: { name: '', email: '', phone: '', pin: '' },
+        checks: { camera: false, mic: false, fullscreen: false },
+        agreed: false,
+        stream: null,
+        questions: [],
+        current: 0,
+        answers: {},
+        flagged: new Set(),
+        timeLeft: 30 * 60,
+        violations: 0,
+        showCalc: false,
+        showWarning: false,
+        warningMsg: '',
+        submitted: false,
+        loginError: '',
+        timerInterval: null,
+        internetOnline: navigator.onLine,
+      };
+
+      const root = document.getElementById('root');
+
+      function render() {
+        root.innerHTML = '';
+        switch (state.stage) {
+          case 'login': renderLogin(); break;
+          case 'precheck': renderPrecheck(); break;
+          case 'exam': renderExam(); break;
+          case 'result': renderResult(); break;
+        }
+      }
+
+      // ─── LOGIN (NIN field removed) ─────────────────────────────
+      function renderLogin() {
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;';
+        div.innerHTML = `
+          <div class="card" style="width:100%;max-width:480px;">
+            <div style="text-align:center;margin-bottom:32px;">
+              <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#5b21b6);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;">🎓</div>
+              <h1 style="margin:0;font-size:24px;font-weight:800;background:linear-gradient(135deg,#a78bfa,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">UNILAG CBT Portal</h1>
+              <p style="margin:8px 0 0;color:#94a3b8;font-size:14px;">2026/2027 Post-UTME Screening Exercise</p>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              ${['Full Name','Email Address','Phone Number','Exam PIN'].map((label,i) => {
+                const key = ['name','email','phone','pin'][i];
+                const type = key==='email'?'email':key==='pin'?'password':key==='phone'?'tel':'text';
+                const ph = ['e.g. ISRAEL OKONKWO','e.g. candidate@email.com','e.g. 08012345678','Enter PIN given to you'][i];
+                return `<div><label class="label">${label}</label><input type="${type}" placeholder="${ph}" id="${key}" value="${state.candidate[key] || ''}"></div>`;
+              }).join('')}
+              <div id="loginError" style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;border-radius:8px;padding:10px 14px;color:#fca5a5;font-size:14px;display:${state.loginError?'block':'none'};">${state.loginError}</div>
+              <button id="loginBtn" class="btn-purple" style="width:100%;">Proceed to Pre-Exam Check →</button>
+            </div>
+            <p style="text-align:center;margin-top:16px;color:#64748b;font-size:12px;">Demo PIN: <strong style="color:#a78bfa;">1234</strong> · For official use only</p>
+          </div>
+        `;
+        root.appendChild(div);
+        document.getElementById('loginBtn').addEventListener('click', handleLogin);
+      }
+
+      function handleLogin() {
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const pin = document.getElementById('pin').value.trim();
+        if (!name || !email || !phone) {
+          state.loginError = 'Please fill in all fields.';
+          render(); return;
+        }
+        if (pin !== '1234') {
+          state.loginError = 'Invalid PIN. (Use: 1234)';
+          render(); return;
+        }
+        state.candidate = { name, email, phone, pin };
+        state.loginError = '';
+        state.stage = 'precheck';
+        render();
+      }
+
+      // ─── PRE-CHECK ──────────────────────────────────────────────
+      function renderPrecheck() {
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;';
+        div.innerHTML = `
+          <div class="card" style="width:100%;max-width:520px;">
+            <h2 style="margin:0 0 4px;font-size:20px;font-weight:800;color:#a78bfa;text-align:center;">PRE-EXAM CHECK</h2>
+            <p style="text-align:center;color:#64748b;font-size:13px;margin-top:4px;margin-bottom:24px;">Complete all checks before your exam begins</p>
+            <div style="background:rgba(124,58,237,0.1);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:14px;color:#cbd5e1;">
+              👤 <strong style="color:#a78bfa;" id="candName">${state.candidate.name}</strong> · ${state.candidate.email}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;" id="checksList">
+              ${[
+                { key:'internet', label:'Internet Connected', icon:'🌐', auto:true },
+                { key:'camera', label:'Camera Access', icon:'📷', auto:false },
+                { key:'mic', label:'Microphone Access', icon:'🎤', auto:false },
+                { key:'fullscreen', label:'Fullscreen Mode', icon:'🖥️', auto:false },
+              ].map(({key,label,icon,auto}) => `
+                <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);border-radius:10px;padding:12px 16px;border:1px solid ${state.checks[key]?'rgba(16,185,129,0.4)':'rgba(255,255,255,0.08)'};">
+                  <span>${icon} ${label}</span>
+                  <span id="${key}Status">${state.checks[key]?'✅':'⏳'}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div style="display:flex;gap:10px;margin-bottom:20px;">
+              <button id="reqCamMic" style="flex:1;background:rgba(124,58,237,0.3);color:#a78bfa;padding:10px;border-radius:8px;">📷 Enable Camera & Mic</button>
+              <button id="reqFullscreen" style="flex:1;background:rgba(124,58,237,0.3);color:#a78bfa;padding:10px;border-radius:8px;">🖥️ Enter Fullscreen</button>
+            </div>
+            <div id="cameraPreviewContainer" style="display:${state.stream?'block':'none'};margin-bottom:20px;border-radius:10px;overflow:hidden;border:2px solid rgba(124,58,237,0.5);">
+              <div style="background:rgba(124,58,237,0.2);padding:6px 12px;font-size:12px;color:#a78bfa;">📹 Live Camera Preview — Ensure your face is clearly visible</div>
+              <video id="previewVideo" autoplay muted playsinline style="width:100%;display:block;max-height:200px;object-fit:cover;"></video>
+            </div>
+            <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;margin-bottom:20px;font-size:14px;color:#cbd5e1;line-height:1.5;">
+              <input type="checkbox" id="agreeCheck" ${state.agreed?'checked':''} style="margin-top:2px;accent-color:#7c3aed;width:16px;height:16px;">
+              I agree to the examination rules. I understand that tab switching, exiting fullscreen, or any form of malpractice will result in automatic submission.
+            </label>
+            <button id="startExamBtn" class="${state.checks.camera && state.checks.mic && state.agreed ? 'btn-purple' : 'btn-disabled'}" style="width:100%;padding:14px;border-radius:10px;" ${!(state.checks.camera && state.checks.mic && state.agreed) ? 'disabled' : ''}>
+              ${state.checks.camera && state.checks.mic && state.agreed ? '🚀 START EXAM' : 'Complete all checks to continue'}
+            </button>
+            <p style="text-align:center;margin-top:12px;color:#64748b;font-size:12px;">⏱ Duration: 30 minutes · 40 Questions · Multiple Choice & Short Answer</p>
+          </div>
+        `;
+        root.appendChild(div);
+
+        document.getElementById('reqCamMic').addEventListener('click', requestPermissions);
+        document.getElementById('reqFullscreen').addEventListener('click', enterFullscreen);
+        document.getElementById('agreeCheck').addEventListener('change', e => {
+          state.agreed = e.target.checked;
+          document.getElementById('startExamBtn').disabled = !(state.checks.camera && state.checks.mic && state.agreed);
+          document.getElementById('startExamBtn').className = (state.checks.camera && state.checks.mic && state.agreed) ? 'btn-purple' : 'btn-disabled';
+        });
+        document.getElementById('startExamBtn').addEventListener('click', startExam);
+        if (state.stream) {
+          document.getElementById('previewVideo').srcObject = state.stream;
+        }
+        updatePrecheckStatus();
+      }
+
+      function updatePrecheckStatus() {
+        ['internet','camera','mic','fullscreen'].forEach(k => {
+          const el = document.getElementById(`${k}Status`);
+          if (el) el.textContent = state.checks[k] ? '✅' : '⏳';
+        });
+        const startBtn = document.getElementById('startExamBtn');
+        if (startBtn) {
+          const canStart = state.checks.camera && state.checks.mic && state.agreed;
+          startBtn.disabled = !canStart;
+          startBtn.className = canStart ? 'btn-purple' : 'btn-disabled';
+        }
+      }
+
+      async function requestPermissions() {
+        try {
+          const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          state.stream = s;
+          state.checks.camera = true;
+          state.checks.mic = true;
+          if (state.stage === 'precheck') {
+            const video = document.getElementById('previewVideo');
+            if (video) video.srcObject = s;
+            document.getElementById('cameraPreviewContainer').style.display = 'block';
+          }
+        } catch (e) {
+          alert('Camera/microphone access denied.');
+        }
+        if (state.stage === 'precheck') updatePrecheckStatus();
+      }
+
+      function enterFullscreen() {
+        document.documentElement.requestFullscreen().then(() => {
+          state.checks.fullscreen = true;
+        }).catch(() => {
+          state.checks.fullscreen = false;
+        }).finally(() => {
+          if (state.stage === 'precheck') updatePrecheckStatus();
+        });
+      }
+
+      document.addEventListener('fullscreenchange', () => {
+        state.checks.fullscreen = !!document.fullscreenElement;
+        if (state.stage === 'precheck') updatePrecheckStatus();
+        if (state.stage === 'exam' && !document.fullscreenElement && !state.submitted) {
+          addViolation('You exited fullscreen.');
+          document.documentElement.requestFullscreen().catch(()=>{});
+        }
+      });
+
+      window.addEventListener('online', () => { state.internetOnline = true; state.checks.internet = true; if(state.stage==='precheck') updatePrecheckStatus(); });
+      window.addEventListener('offline', () => { state.internetOnline = false; state.checks.internet = false; if(state.stage==='precheck') updatePrecheckStatus(); });
+
+      function startExam() {
+        if (!(state.checks.camera && state.checks.mic && state.agreed)) return;
+        state.questions = buildExam();
+        state.current = 0;
+        state.answers = {};
+        state.flagged = new Set();
+        state.timeLeft = 30 * 60;
+        state.violations = 0;
+        state.submitted = false;
+        state.stage = 'exam';
+        if (state.timerInterval) clearInterval(state.timerInterval);
+        state.timerInterval = setInterval(timerTick, 1000);
+        document.documentElement.requestFullscreen().catch(()=>{});
+        render();
+      }
+
+      function timerTick() {
+        if (state.stage !== 'exam' || state.submitted) return;
+        state.timeLeft--;
+        const timerEl = document.getElementById('timerDisplay');
+        if (timerEl) {
+          timerEl.textContent = formatTime(state.timeLeft);
+          timerEl.style.color = state.timeLeft < 300 ? '#ef4444' : state.timeLeft < 600 ? '#f59e0b' : '#10b981';
+        }
+        if (state.timeLeft <= 0) submitExam();
+      }
+
+      // ─── EXAM PAGE ─────────────────────────────────────────────
+      function renderExam() {
+        if (!state.questions.length) return;
+        const q = state.questions[state.current];
+        const answeredCount = Object.keys(state.answers).length;
+
+        const container = document.createElement('div');
+        container.style.cssText = 'display:flex;flex-direction:column;min-height:100vh;';
+        container.innerHTML = `
+          <div style="background:rgba(0,0,0,0.4);backdrop-filter:blur(10px);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(124,58,237,0.3);position:sticky;top:0;z-index:100;">
+            <div style="font-size:13px;color:#94a3b8;">👤 ${state.candidate.name}</div>
+            <div id="timerDisplay" class="timer" style="color:${state.timeLeft<300?'#ef4444':state.timeLeft<600?'#f59e0b':'#10b981'};">⏱ ${formatTime(state.timeLeft)}</div>
+            <div style="display:flex;gap:8px;">
+              <button id="toggleCalcBtn" style="background:rgba(124,58,237,0.3);color:#a78bfa;padding:6px 12px;border-radius:6px;font-size:13px;">🧮</button>
+              <button id="submitExamBtn" style="background:rgba(239,68,68,0.2);color:#fca5a5;padding:6px 12px;border-radius:6px;font-size:13px;">Submit</button>
+            </div>
+          </div>
+          <div style="display:flex;flex:1;" class="exam-layout">
+            <div class="sidebar" style="width:220px;background:rgba(0,0,0,0.3);border-right:1px solid rgba(124,58,237,0.2);padding:16px;overflow-y:auto;">
+              <div style="font-size:12px;color:#a78bfa;font-weight:700;margin-bottom:12px;text-transform:uppercase;">Question Palette</div>
+              <div id="paletteGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;">
+                ${state.questions.map((q2,i) => {
+                  let cls = 'palette-btn';
+                  if (state.answers[q2.id]) cls += ' answered';
+                  if (state.flagged.has(q2.id)) cls += ' flagged';
+                  if (i === state.current) cls += ' current';
+                  return `<button class="${cls}" data-index="${i}">${i+1}</button>`;
+                }).join('')}
+              </div>
+              <div style="font-size:11px;color:#64748b;line-height:2;">
+                <div><span style="background:#10b981;border-radius:4px;padding:1px 6px;margin-right:4px;">■</span>Answered</div>
+                <div><span style="background:#f59e0b;border-radius:4px;padding:1px 6px;margin-right:4px;">■</span>Flagged</div>
+                <div><span style="background:rgba(255,255,255,0.15);border-radius:4px;padding:1px 6px;margin-right:4px;">■</span>Not answered</div>
+              </div>
+              <div style="margin-top:16px;padding:10px 12px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.2);">
+                <div style="font-size:11px;color:#fca5a5;">Violations</div>
+                <div style="font-size:22px;font-weight:800;color:#ef4444;">${state.violations}/3</div>
+              </div>
+            </div>
+            <div style="flex:1;padding:24px;overflow-y:auto;">
+              <div style="margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:#94a3b8;margin-bottom:6px;">
+                  <span>Question ${state.current+1} of ${state.questions.length}</span>
+                  <span>${answeredCount} answered</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.1);border-radius:99px;height:6px;">
+                  <div style="background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:99px;height:100%;width:${((state.current+1)/state.questions.length)*100}%;transition:width 0.3s;"></div>
+                </div>
+              </div>
+              <div style="display:inline-block;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);border-radius:99px;padding:4px 12px;font-size:12px;color:#a78bfa;font-weight:700;margin-bottom:16px;">
+                ${q.subject} · ${q.type === 'mcq' ? 'Multiple Choice' : 'Short Answer'}
+              </div>
+              <div class="card" style="margin-bottom:20px;">
+                <p style="margin:0;font-size:17px;line-height:1.7;font-weight:500;">${q.question}</p>
+              </div>
+              ${q.type === 'mcq' ? `
+                <div style="display:flex;flex-direction:column;gap:10px;" id="optionsContainer">
+                  ${q.options.map((opt, i) => {
+                    const selected = state.answers[q.id] === opt;
+                    return `<button class="option-btn" data-opt="${opt.replace(/"/g,'&quot;')}" style="padding:14px 20px;border-radius:10px;border:2px solid ${selected?'#7c3aed':'rgba(255,255,255,0.1)'};background:${selected?'rgba(124,58,237,0.25)':'rgba(255,255,255,0.04)'};color:${selected?'#a78bfa':'#cbd5e1'};text-align:left;font-size:15px;display:flex;align-items:center;gap:12px;">
+                      <span style="width:28px;height:28px;border-radius:50%;background:${selected?'#7c3aed':'rgba(255,255,255,0.1)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">${String.fromCharCode(65+i)}</span> ${opt}
+                    </button>`;
+                  }).join('')}
+                </div>`
+              : `
                 <div>
-                    <div class="q-counter">Question <strong id="current-q-num">1</strong> of <span id="total-q-num">0</span></div>
-                    <div style="font-size:0.8rem;color:var(--text-light);margin-top:2px;" id="exam-subject-label">Subject</div>
-                </div>
-                <div class="timer" id="examTimer">00:00</div>
+                  <label class="label">Your Answer</label>
+                  <input style="background:rgba(255,255,255,0.07);border:1px solid rgba(124,58,237,0.4);color:#e2e8f0;padding:12px 16px;border-radius:10px;font-size:16px;width:100%;outline:none;" placeholder="Type your answer here..." id="saqInput" value="${state.answers[q.id] || ''}">
+                  <p style="margin:8px 0 0;font-size:12px;color:#64748b;">Follow the question's format exactly.</p>
+                </div>`
+              }
+              <div style="display:flex;justify-content:space-between;margin-top:24px;gap:10px;">
+                <button id="prevBtn" ${state.current===0?'disabled':''} style="background:rgba(255,255,255,0.08);color:${state.current===0?'#334155':'#e2e8f0'};padding:14px 20px;border-radius:10px;">← Previous</button>
+                <button id="flagBtn" style="background:${state.flagged.has(q.id)?'rgba(245,158,11,0.2)':'rgba(255,255,255,0.08)'};color:${state.flagged.has(q.id)?'#f59e0b':'#94a3b8'};padding:14px 20px;border-radius:10px;">${state.flagged.has(q.id)?'🚩 Unflag':'🏳️ Flag'}</button>
+                ${state.current < state.questions.length-1 ? 
+                  `<button id="nextBtn" class="btn-purple" style="padding:14px 20px;border-radius:10px;">Next →</button>` :
+                  `<button id="submitExamBtnMain" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:14px 20px;border-radius:10px;">✅ Submit Exam</button>`
+                }
+              </div>
             </div>
+            ${state.stream ? `
+            <div style="width:160px;background:rgba(0,0,0,0.4);border-left:1px solid rgba(124,58,237,0.2);padding:12px;display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:11px;color:#a78bfa;font-weight:700;text-align:center;">📹 LIVE</div>
+              <video id="liveCamera" autoplay muted playsinline style="width:100%;border-radius:8px;border:1px solid rgba(124,58,237,0.4);object-fit:cover;aspect-ratio:4/3;"></video>
+              <div style="font-size:10px;color:#64748b;text-align:center;">You are being monitored</div>
+            </div>` : ''}
+          </div>
+        `;
 
-            <div class="question-container" id="questionContainer">
-                <!-- Rendered by JS -->
-            </div>
+        root.appendChild(container);
 
-            <div class="palette-legend">
-                <span><span class="dot active-dot"></span> Current</span>
-                <span><span class="dot answered-dot"></span> Answered</span>
-                <span><span class="dot"></span> Unanswered</span>
-            </div>
-            <div class="palette" id="questionPalette">
-                <!-- Rendered by JS -->
-            </div>
-
-            <div class="exam-nav">
-                <div class="nav-btns">
-                    <button id="btnPrev" class="btn btn-outline btn-sm">← Previous</button>
-                    <button id="btnNext" class="btn btn-primary btn-sm">Next →</button>
-                </div>
-                <div>
-                    <button id="btnSubmitExam" class="btn btn-danger btn-sm">Submit Exam</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ===== SCREEN: RESULTS ===== -->
-        <div id="screen-results" class="screen">
-            <div class="text-center">
-                <span class="unilag-badge">Results</span>
-                <h2>Exam Completed</h2>
-                <p class="subhead" id="result-candidate-name"></p>
-            </div>
-            <div class="result-summary" id="resultSummary">
-                <!-- Rendered by JS -->
-            </div>
-            <div style="margin:16px 0;text-align:center;">
-                <button id="btnToggleReview" class="btn btn-gold">📋 Review Wrong Answers</button>
-                <button id="btnPrintResults" class="btn btn-outline" style="margin-left:8px;">🖨️ Print</button>
-            </div>
-            <div id="reviewContainer" style="display:none;margin-top:16px;">
-                <h3>📘 Detailed Review</h3>
-                <div id="reviewList"></div>
-            </div>
-            <div class="flex-wrap" style="justify-content:center;margin-top:20px;gap:12px;">
-                <button id="btnRestart" class="btn btn-primary">🔄 Retake Exam</button>
-            </div>
-            <p class="text-center mt-8" style="font-size:0.8rem;color:var(--text-light);" id="emailStatus">📧 Results have been sent to the teacher.</p>
-        </div>
-
-    </div>
-
-    <script>
-        // ============================================================
-        // 1. EMAILJS INIT
-        // ============================================================
-        (function() {
-            emailjs.init({
-                publicKey: "YOUR_PUBLIC_KEY",
+        if (q.type === 'mcq') {
+          document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              state.answers[q.id] = btn.dataset.opt;
+              render();
             });
-        })();
+          });
+        } else {
+          document.getElementById('saqInput').addEventListener('input', e => {
+            state.answers[q.id] = e.target.value;
+          });
+        }
 
-        // ============================================================
-        // 2. QUESTION BANK — 120 Questions (20 per subject)
-        // ============================================================
-        const QUESTION_BANK = {
-            English: [
-                { id: 'E1', q: 'In the sentence "The committee were divided in their opinions," the verb "were" is an example of:', options: ['Synesis', 'Anacoluthon', 'Hyperbaton', 'Zeugma'], answer: 0,
-                    explanation: 'Synesis (also called constructio ad sensum) occurs when the verb agrees with the sense of the subject rather than its grammatical form. "Committee" is singular in form but plural in sense.' },
-                { id: 'E2', q: 'Which of the following contains a dangling modifier?', options: ['Running swiftly, the finish line approached.', 'Having finished the test, she left the hall.',
-                        'To succeed, one must work hard.', 'The book, written in 1999, is a classic.'
-                    ], answer: 0, explanation: '"Running swiftly" logically modifies "the finish line," which is nonsensical—it should modify a person.' },
-                { id: 'E3', q: 'The word "inflammable" means:', options: ['Not flammable', 'Easily set on fire', 'Resistant to fire', 'Slow to burn'], answer: 1,
-                    explanation: 'Despite the prefix "in-," inflammable means the same as flammable—easily ignited. This is a common lexical trap.' },
-                { id: 'E4', q: 'Identify the sentence with correct subject-verb agreement:', options: ['Neither the teacher nor the students is present.', 'Either the manager or the assistants are responsible.',
-                        'The news are shocking.', 'Mathematics are my favourite subject.'
-                    ], answer: 1, explanation: 'With "either/or" and "neither/nor," the verb agrees with the noun closest to it. "Assistants" is plural, so "are" is correct.' },
-                { id: 'E5', q: 'The phrase "peruse" most nearly means:', options: ['To glance over', 'To examine carefully', 'To skip through', 'To ignore'], answer: 1,
-                    explanation: 'Peruse means to read or examine thoroughly, not to skim. A common misconception.' },
-                { id: 'E6', q: 'Which literary device is used in "The wind whispered through the trees"?', options: ['Simile', 'Metaphor', 'Personification', 'Hyperbole'], answer: 2,
-                    explanation: 'Personification attributes human qualities (whispering) to an inanimate object (the wind).' },
-                { id: 'E7', q: 'Choose the correctly punctuated sentence:', options: ['Its a beautiful day.', "It's a beautiful day.", 'Its\' a beautiful day.', 'It is\' a beautiful day.'],
-                    answer: 1, explanation: '"It\'s" is the contraction of "it is." "Its" is possessive. The apostrophe indicates the contraction.' },
-                { id: 'E8', q: 'The word "enormity" in formal usage refers to:', options: ['Great size', 'Great wickedness', 'Great importance', 'Great beauty'], answer: 1,
-                    explanation: 'Formally, "enormity" means extreme wickedness or monstrosity, not size. Using it to mean "great size" is colloquial but technically incorrect.' },
-                { id: 'E9', q: 'Which sentence is in the subjunctive mood?', options: ['If I was you, I would go.', 'If I were you, I would go.', 'If I am you, I will go.',
-                        'If I had been you, I would go.'
-                    ], answer: 1, explanation: 'The subjunctive mood uses "were" for unreal/hypothetical situations (contrary to fact). "If I were you" is the correct subjunctive form.' },
-                { id: 'E10', q: '"My brother, who lives in London, is a doctor." The clause "who lives in London" is:', options: ['Restrictive', 'Non-restrictive', 'Adverbial', 'Nominal'],
-                    answer: 1, explanation: 'The clause is non-restrictive (provides extra information) and is set off by commas. It does not limit which brother.' },
-                { id: 'E11', q: 'The opposite of "ephemeral" is:', options: ['Transient', 'Eternal', 'Fleeting', 'Brief'], answer: 1,
-                    explanation: 'Ephemeral means short-lived; its opposite is eternal or lasting.' },
-                { id: 'E12', q: 'Choose the correct passive voice transformation: "The teacher gave the students a test."', options: ['A test was given to the students by the teacher.',
-                        'The students were given a test by the teacher.', 'Both A and B are correct.', 'Neither A nor B is correct.'
-                    ], answer: 2, explanation: 'Both are grammatically correct passive transformations. The direct object (test) or indirect object (students) can become the subject.' },
-                { id: 'E13', q: 'The word "bemused" means:', options: ['Amused', 'Confused', 'Entertained', 'Delighted'], answer: 1,
-                    explanation: 'Bemused means puzzled, confused, or bewildered—not amused. This is a frequently confused pair.' },
-                { id: 'E14', q: 'Which sentence uses "who" correctly?', options: ['Whom do you think will win?', 'Who did you give the book to?', 'To whom should I address the letter?',
-                        'Whom is coming to dinner?'
-                    ], answer: 2, explanation: '"Whom" is the object form; it follows prepositions like "to." "Who" is the subject form.' },
-                { id: 'E15', q: 'The phrase "toe the line" means:', options: ['To follow rules strictly', 'To dance gracefully', 'To cross a boundary', 'To walk on a tightrope'],
-                    answer: 0, explanation: '"Toe the line" means to conform to rules or standards. It is often mistakenly written as "tow the line."' },
-                { id: 'E16', q: 'Identify the error: "Between you and I, this is a secret."', options: ['Between', 'you and I', 'this is', 'a secret'], answer: 1,
-                    explanation: '"Between you and me" is correct because "me" is the object of the preposition "between."' },
-                { id: 'E17', q: 'The word "fortuitous" means:', options: ['Fortunate', 'Accidental', 'Lucky', 'Planned'], answer: 1,
-                    explanation: 'Fortuitous means happening by chance or accident—not necessarily lucky. It is often misused as a synonym for "fortunate."' },
-                { id: 'E18', q: 'Which of the following is a compound-complex sentence?', options: ['She went home.', 'She went home because she was tired, and she slept.',
-                        'Because she was tired, she slept.', 'She was tired, so she slept.'
-                    ], answer: 1, explanation: 'A compound-complex sentence has at least two independent clauses and one dependent clause. Option B has two independent clauses ("she went home" and "she slept") and one dependent ("because she was tired").' },
-                { id: 'E19', q: 'The term "nonplussed" means:', options: ['Unimpressed', 'Confused', 'Unconcerned', 'Unfazed'], answer: 1,
-                    explanation: 'Nonplussed means so surprised and confused that one is unsure how to react. In American English, it has evolved to mean unimpressed, but the original meaning is confusion.' },
-                { id: 'E20', q: 'Choose the correct sequence: "She ____ to the store when she ____ her friend."', options: ['went, sees', 'goes, saw', 'went, saw', 'has gone, sees'],
-                    answer: 2, explanation: 'Both actions are in the past, so simple past "went" and "saw" are correct.' }
-            ],
-            Mathematics: [
-                { id: 'M1', q: 'If f(x) = x³ − 6x² + 11x − 6, find the sum of the roots.', options: ['6', '−6', '11', '−11'], answer: 0,
-                    explanation: 'For a cubic ax³ + bx² + cx + d, sum of roots = −b/a. Here a=1, b=−6, so sum = 6.' },
-                { id: 'M2', q: 'Evaluate lim(x→0) (sin 3x)/(2x).', options: ['3/2', '2/3', '3', '1.5'], answer: 0,
-                    explanation: 'lim(x→0) sin(kx)/x = k. So sin(3x)/(2x) = (3/2)·sin(3x)/(3x) → 3/2.' },
-                { id: 'M3', q: 'The derivative of ln(x² + 1) is:', options: ['2x/(x²+1)', '1/(x²+1)', '2x', '2x ln(x²+1)'], answer: 0,
-                    explanation: 'Chain rule: d/dx ln(u) = u\'/u. u = x²+1, u\'=2x, so 2x/(x²+1).' },
-                { id: 'M4', q: 'Solve for x: log₂(x) + log₂(x−2) = 3.', options: ['4', '−2', '4 and −2', '2'], answer: 0,
-                    explanation: 'log₂[x(x−2)] = 3 ⇒ x(x−2)=8 ⇒ x²−2x−8=0 ⇒ (x−4)(x+2)=0. x=4 (since log undefined for negative).' },
-                { id: 'M5', q: 'The 7th term of the sequence 3, 6, 12, 24, … is:', options: ['96', '192', '128', '384'], answer: 1,
-                    explanation: 'Geometric sequence: aₙ = 3·2ⁿ⁻¹. a₇ = 3·2⁶ = 3·64 = 192.' },
-                { id: 'M6', q: 'If sin θ = 3/5 and θ is acute, then cos 2θ is:', options: ['7/25', '−7/25', '24/25', '−24/25'], answer: 0,
-                    explanation: 'cos θ = 4/5. cos 2θ = cos²θ − sin²θ = (16/25)−(9/25)=7/25.' },
-                { id: 'M7', q: 'The integral ∫ 2x·e^(x²) dx equals:', options: ['e^(x²) + C', '2e^(x²) + C', 'x² e^(x²) + C', 'e^(2x²) + C'], answer: 0,
-                    explanation: 'Let u = x², du = 2x dx. ∫ 2x e^(x²) dx = ∫ e^u du = e^u + C = e^(x²) + C.' },
-                { id: 'M8', q: 'Find the determinant: | 2 3 | | 4 5 |', options: ['−2', '2', '22', '−22'], answer: 0,
-                    explanation: 'det = (2·5) − (3·4) = 10 − 12 = −2.' },
-                { id: 'M9', q: 'If z = 2 + 3i, then |z|² is:', options: ['13', '5', '√13', '25'], answer: 0,
-                    explanation: '|z|² = 2² + 3² = 4 + 9 = 13.' },
-                { id: 'M10', q: 'The number of ways to arrange 5 distinct books on a shelf is:', options: ['120', '60', '25', '720'], answer: 0,
-                    explanation: '5! = 5×4×3×2×1 = 120.' },
-                { id: 'M11', q: 'Solve the system: 2x + y = 7, x − y = 2.', options: ['x=3, y=1', 'x=1, y=3', 'x=2, y=3', 'x=3, y=−1'], answer: 0,
-                    explanation: 'Add equations: 3x = 9 ⇒ x=3. Then 3−y=2 ⇒ y=1.' },
-                { id: 'M12', q: 'The probability of rolling a sum of 7 with two dice is:', options: ['1/6', '1/12', '1/36', '5/36'], answer: 0,
-                    explanation: 'There are 6 ways to get sum 7 out of 36 outcomes. 6/36 = 1/6.' },
-                { id: 'M13', q: 'If cos θ = −1/2 and θ is in quadrant II, then θ =:', options: ['120°', '60°', '240°', '300°'], answer: 0,
-                    explanation: 'In QII, cos is negative. cos 120° = −1/2.' },
-                { id: 'M14', q: 'The equation of the circle with center (2,−3) and radius 5 is:', options: ['(x−2)²+(y+3)²=25', '(x+2)²+(y−3)²=25', '(x−2)²+(y−3)²=25',
-                        '(x+2)²+(y+3)²=25'
-                    ], answer: 0, explanation: 'Standard form: (x−h)² + (y−k)² = r². Here h=2, k=−3, so (x−2)² + (y+3)² = 25.' },
-                { id: 'M15', q: 'If a = 2 and b = 3, then (a + b)² − (a² + b²) = ?', options: ['12', '6', '5', '0'], answer: 0,
-                    explanation: '(2+3)² − (4+9) = 25 − 13 = 12.' },
-                { id: 'M16', q: 'The sum of the first 10 positive integers is:', options: ['55', '50', '60', '45'], answer: 0,
-                    explanation: 'Sum = n(n+1)/2 = 10·11/2 = 55.' },
-                { id: 'M17', q: 'Find the value of x: 2^(x+1) = 16.', options: ['3', '4', '2', '5'], answer: 0,
-                    explanation: '2^(x+1) = 2⁴ ⇒ x+1=4 ⇒ x=3.' },
-                { id: 'M18', q: 'The slope of the line through (1,2) and (3,8) is:', options: ['3', '2', '6', '4'], answer: 0,
-                    explanation: 'slope = (8−2)/(3−1) = 6/2 = 3.' },
-                { id: 'M19', q: 'If f(x) = x² − 4x + 4, then f(2) = ?', options: ['0', '4', '2', '−4'], answer: 0,
-                    explanation: 'f(2) = 4 − 8 + 4 = 0.' },
-                { id: 'M20', q: 'The inverse of the matrix [ [1,2], [3,4] ] is:', options: ['[[-2,1],[1.5,-0.5]]', '[[4,-2],[-3,1]]', '[[2,-1],[-1.5,0.5]]', '[[-4,2],[3,-1]]'],
-                    answer: 0, explanation: 'det = 1·4−2·3 = −2. Inverse = (1/det)[[4,−2],[−3,1]] = [[−2,1],[1.5,−0.5]].' }
-            ],
-            Physics: [
-                { id: 'P1', q: 'A body moving with uniform acceleration covers 20 m in the 4th second and 30 m in the 6th second. Find the acceleration.', options: ['5 m/s²', '2.5 m/s²',
-                        '10 m/s²', '4 m/s²'
-                    ], answer: 0, explanation: 'Distance in nth second: Sₙ = u + a(n−0.5). S₄ − S₆ = 20 − 30 = −10 = a(4−0.5 − (6−0.5)) = a(−2) ⇒ a = 5 m/s².' },
-                { id: 'P2', q: 'Two resistors of 2Ω and 3Ω are in parallel. The equivalent resistance is:', options: ['1.2Ω', '5Ω', '6Ω', '1.5Ω'], answer: 0,
-                    explanation: '1/R = 1/2 + 1/3 = 5/6 ⇒ R = 6/5 = 1.2Ω.' },
-                { id: 'P3', q: 'The wavelength of a wave with frequency 500 Hz and speed 340 m/s is:', options: ['0.68 m', '1.47 m', '680 m', '0.34 m'], answer: 0,
-                    explanation: 'λ = v/f = 340/500 = 0.68 m.' },
-                { id: 'P4', q: 'A 2 kg object is dropped from rest. Its kinetic energy after falling 10 m is (g=10 m/s²):', options: ['200 J', '20 J', '100 J', '400 J'], answer: 0,
-                    explanation: 'KE = mgh = 2·10·10 = 200 J (conservation of energy).' },
-                { id: 'P5', q: 'The SI unit of magnetic flux is:', options: ['Tesla', 'Weber', 'Henry', 'Farad'], answer: 1,
-                    explanation: 'The weber (Wb) is the SI unit of magnetic flux.' },
-                { id: 'P6', q: 'A concave mirror has focal length 15 cm. An object is placed 20 cm from the mirror. The image is:', options: ['Real and inverted', 'Virtual and upright',
-                        'Real and upright', 'Virtual and inverted'
-                    ], answer: 0, explanation: '1/f = 1/v + 1/u, with u=−20, f=−15 ⇒ 1/v = −1/15 + 1/20 = (−4+3)/60 = −1/60 ⇒ v = −60 cm (real, inverted).' },
-                { id: 'P7', q: 'The efficiency of a Carnot engine operating between 127°C and 27°C is:', options: ['25%', '33%', '50%', '75%'], answer: 0,
-                    explanation: 'η = 1 − T_c/T_h = 1 − 300/400 = 0.25 = 25%. (T in Kelvin).' },
-                { id: 'P8', q: 'A charge of 2 C moves through a potential difference of 10 V. The work done is:', options: ['20 J', '5 J', '0.2 J', '10 J'], answer: 0,
-                    explanation: 'W = QV = 2·10 = 20 J.' },
-                { id: 'P9', q: 'The period of a simple pendulum of length 1 m on Earth (g=10 m/s²) is approximately:', options: ['2 s', '1 s', '0.5 s', '4 s'], answer: 0,
-                    explanation: 'T = 2π√(L/g) = 2π√(1/10) ≈ 1.987 ≈ 2 s.' },
-                { id: 'P10', q: 'Which quantity is a scalar?', options: ['Force', 'Velocity', 'Work', 'Momentum'], answer: 2,
-                    explanation: 'Work is a scalar (energy transfer). Force, velocity, and momentum are vectors.' },
-                { id: 'P11', q: 'A 5 kg mass is attached to a spring with k=200 N/m. The angular frequency (ω) is:', options: ['6.32 rad/s', '40 rad/s', '10 rad/s', '2 rad/s'],
-                    answer: 0, explanation: 'ω = √(k/m) = √(200/5) = √40 = 6.32 rad/s.' },
-                { id: 'P12', q: 'The speed of light in a medium of refractive index 1.5 is (c=3×10⁸ m/s):', options: ['2×10⁸ m/s', '4.5×10⁸ m/s', '3×10⁸ m/s', '1.5×10⁸ m/s'],
-                    answer: 0, explanation: 'v = c/n = 3×10⁸/1.5 = 2×10⁸ m/s.' },
-                { id: 'P13', q: 'A transformer has 100 primary turns and 200 secondary turns. If primary voltage is 220 V, secondary voltage is:', options: ['440 V', '110 V', '220 V',
-                        '880 V'
-                    ], answer: 0, explanation: 'V_s/V_p = N_s/N_p ⇒ V_s = 220·(200/100) = 440 V.' },
-                { id: 'P14', q: 'The heat required to raise the temperature of 2 kg of water from 20°C to 80°C is (c=4200 J/kg°C):', options: ['504 kJ', '252 kJ', '1008 kJ', '126 kJ'],
-                    answer: 0, explanation: 'Q = mcΔT = 2·4200·60 = 504,000 J = 504 kJ.' },
-                { id: 'P15', q: 'The gravitational potential energy of a 10 kg object at a height of 5 m is (g=10 m/s²):', options: ['500 J', '50 J', '1000 J', '250 J'], answer: 0,
-                    explanation: 'PE = mgh = 10·10·5 = 500 J.' },
-                { id: 'P16', q: 'In a circuit, the current is 2 A and resistance is 5 Ω. The voltage is:', options: ['10 V', '2.5 V', '20 V', '5 V'], answer: 0,
-                    explanation: 'V = IR = 2·5 = 10 V.' },
-                { id: 'P17', q: 'The force between two charges q₁ and q₂ separated by distance r is proportional to:', options: ['1/r²', '1/r', 'r²', 'r'], answer: 0,
-                    explanation: 'Coulomb\'s law: F ∝ q₁q₂/r².' },
-                { id: 'P18', q: 'A car accelerates from rest at 2 m/s² for 5 s. The distance covered is:', options: ['25 m', '10 m', '50 m', '20 m'], answer: 0,
-                    explanation: 's = ut + ½at² = 0 + ½·2·25 = 25 m.' },
-                { id: 'P19', q: 'The unit of power is:', options: ['Watt', 'Joule', 'Newton', 'Pascal'], answer: 0,
-                    explanation: 'The watt (W) is the SI unit of power.' },
-                { id: 'P20', q: 'Which of the following is not a state of matter?', options: ['Plasma', 'Bose-Einstein condensate', 'Neutronium', 'Radiation'], answer: 3,
-                    explanation: 'Radiation is energy, not a state of matter. Plasma, BEC, and neutronium are exotic states.' }
-            ],
-            Chemistry: [
-                { id: 'C1', q: 'The hybridization of carbon in ethyne (C₂H₂) is:', options: ['sp', 'sp²', 'sp³', 'sp³d'], answer: 0,
-                    explanation: 'Ethyne (acetylene) has a triple bond, each carbon is sp hybridized with linear geometry.' },
-                { id: 'C2', q: 'Which of the following has the highest electronegativity?', options: ['F', 'Cl', 'Br', 'I'], answer: 0,
-                    explanation: 'Fluorine is the most electronegative element (Pauling scale: 3.98).' },
-                { id: 'C3', q: 'The pH of a 0.01 M HCl solution is:', options: ['2', '12', '1', '4'], answer: 0,
-                    explanation: 'HCl is a strong acid, [H⁺] = 0.01 M, pH = −log(0.01) = 2.' },
-                { id: 'C4', q: 'Which compound exhibits geometric isomerism?', options: ['But-2-ene', 'But-1-ene', '2-methylpropene', 'Ethane'], answer: 0,
-                    explanation: 'But-2-ene (CH₃−CH=CH−CH₃) has cis-trans (geometric) isomerism because each double-bond carbon has two different groups.' },
-                { id: 'C5', q: 'The number of neutrons in ²⁴Mg²⁺ is:', options: ['12', '14', '10', '24'], answer: 0,
-                    explanation: '²⁴Mg has mass number 24, atomic number 12. Neutrons = 24 − 12 = 12. The charge does not affect neutron count.' },
-                { id: 'C6', q: 'Which of the following is a strong electrolyte?', options: ['NaCl', 'CH₃COOH', 'NH₃', 'H₂O'], answer: 0,
-                    explanation: 'NaCl is a strong electrolyte—it fully dissociates in water. Acetic acid is weak; NH₃ and H₂O are weak.' },
-                { id: 'C7', q: 'The oxidation state of Cr in K₂Cr₂O₇ is:', options: ['+6', '+3', '+7', '+5'], answer: 0,
-                    explanation: 'K: +1 (×2 = +2), O: −2 (×7 = −14). 2 + 2x −14 = 0 ⇒ 2x = 12 ⇒ x = +6.' },
-                { id: 'C8', q: 'Which bond is most polar?', options: ['H−F', 'H−Cl', 'H−Br', 'H−I'], answer: 0,
-                    explanation: 'Electronegativity difference is largest for H−F (4.0−2.1=1.9).' },
-                { id: 'C9', q: 'The product of the reaction between ethanoic acid and ethanol is:', options: ['Ethyl ethanoate', 'Ethanoic anhydride', 'Ethanol ethanoate',
-                        'Diethyl ether'
-                    ], answer: 0, explanation: 'Esterification: CH₃COOH + C₂H₅OH → CH₃COOC₂H₅ (ethyl ethanoate) + H₂O.' },
-                { id: 'C10', q: 'Which quantum number describes the shape of an orbital?', options: ['ℓ', 'n', 'mₗ', 'mₛ'], answer: 0,
-                    explanation: 'The azimuthal quantum number (ℓ) determines the shape of the orbital (s, p, d, f).' },
-                { id: 'C11', q: 'The molar mass of CaCO₃ is (Ca=40, C=12, O=16):', options: ['100 g/mol', '56 g/mol', '88 g/mol', '112 g/mol'], answer: 0,
-                    explanation: '40 + 12 + 3(16) = 40 + 12 + 48 = 100 g/mol.' },
-                { id: 'C12', q: 'Which of the following is an exothermic process?', options: ['Combustion of methane', 'Melting of ice', 'Boiling water', 'Photosynthesis'],
-                    answer: 0, explanation: 'Combustion releases heat (exothermic). Melting, boiling, and photosynthesis are endothermic.' },
-                { id: 'C13', q: 'The IUPAC name of CH₃CH₂CH₂CH₂OH is:', options: ['Butan-1-ol', 'Butan-2-ol', 'Butanol', '1-butanol'], answer: 0,
-                    explanation: 'The OH is on carbon 1 of a 4-carbon chain: butan-1-ol.' },
-                { id: 'C14', q: 'Which gas is produced when zinc reacts with dilute HCl?', options: ['H₂', 'Cl₂', 'ZnCl₂', 'O₂'], answer: 0,
-                    explanation: 'Zn + 2HCl → ZnCl₂ + H₂ (hydrogen gas).' },
-                { id: 'C15', q: 'The Aufbau principle states that:', options: ['Electrons fill lowest energy levels first', 'No two electrons have same 4 quantum numbers',
-                        'Electrons occupy orbitals singly first', 'Atomic orbitals have definite shapes'
-                    ], answer: 0, explanation: 'The Aufbau principle: electrons occupy orbitals in increasing order of energy (lowest first).' },
-                { id: 'C16', q: 'Which of the following is an aromatic hydrocarbon?', options: ['Benzene', 'Cyclohexane', 'Hexane', 'Butane'], answer: 0,
-                    explanation: 'Benzene (C₆H₆) is the classic aromatic hydrocarbon with a delocalized π system.' },
-                { id: 'C17', q: 'The concentration of 0.1 M NaOH solution in ppm (assuming density 1 g/mL) is:', options: ['4000 ppm', '40 ppm', '400 ppm', '4 ppm'], answer: 0,
-                    explanation: '0.1 M NaOH = 0.1 mol/L = 0.1×40 g/L = 4 g/L = 4000 mg/L = 4000 ppm.' },
-                { id: 'C18', q: 'Which is a reducing agent?', options: ['Na', 'Cl₂', 'KMnO₄', 'H₂O₂ (oxidizing)'], answer: 0,
-                    explanation: 'Sodium (Na) is a good reducing agent—it donates electrons and is oxidized.' },
-                { id: 'C19', q: 'The shape of NH₃ molecule is:', options: ['Trigonal pyramidal', 'Tetrahedral', 'Trigonal planar', 'Bent'], answer: 0,
-                    explanation: 'NH₃ has a trigonal pyramidal shape due to the lone pair on nitrogen (VSEPR theory).' },
-                { id: 'C20', q: 'Which of the following is a synthetic polymer?', options: ['Nylon', 'Cellulose', 'Starch', 'Protein'], answer: 0,
-                    explanation: 'Nylon is a synthetic polymer (polyamide). Cellulose, starch, and proteins are natural polymers.' }
-            ],
-            Biology: [
-                { id: 'B1', q: 'The organelle responsible for ATP production in eukaryotic cells is:', options: ['Mitochondrion', 'Chloroplast', 'Ribosome', 'Golgi apparatus'],
-                    answer: 0, explanation: 'Mitochondria are the powerhouses of the cell, producing ATP via oxidative phosphorylation.' },
-                { id: 'B2', q: 'Which is the smallest unit of life?', options: ['Cell', 'Tissue', 'Organ', 'Organism'], answer: 0,
-                    explanation: 'The cell is the basic structural and functional unit of all living organisms.' },
-                { id: 'B3', q: 'In humans, the diploid number of chromosomes is:', options: ['46', '23', '44', '48'], answer: 0,
-                    explanation: 'Humans have 46 chromosomes (23 pairs) in diploid somatic cells.' },
-                { id: 'B4', q: 'The process of converting glucose to pyruvate is called:', options: ['Glycolysis', 'Krebs cycle', 'Oxidative phosphorylation', 'Fermentation'],
-                    answer: 0, explanation: 'Glycolysis is the metabolic pathway that converts glucose (6C) to pyruvate (3C) in the cytoplasm.' },
-                { id: 'B5', q: 'Which of the following is not a feature of the phylum Chordata?', options: ['Notochord', 'Dorsal hollow nerve cord', 'Pharyngeal slits', 'Segmented body'],
-                    answer: 3,
-                    explanation: 'Segmented body is characteristic of Annelida and Arthropoda, not a defining feature of Chordata. Chordates have notochord, dorsal nerve cord, pharyngeal slits, and post-anal tail.' },
-                { id: 'B6', q: 'The part of the brain responsible for balance and coordination is:', options: ['Cerebellum', 'Cerebrum', 'Medulla oblongata', 'Hypothalamus'],
-                    answer: 0, explanation: 'The cerebellum coordinates voluntary movements, balance, and motor learning.' },
-                { id: 'B7', q: 'In a DNA molecule, adenine pairs with:', options: ['Thymine', 'Cytosine', 'Guanine', 'Uracil'], answer: 0,
-                    explanation: 'In DNA, adenine (A) pairs with thymine (T) via two hydrogen bonds.' },
-                { id: 'B8', q: 'The primary function of red blood cells is:', options: ['Oxygen transport', 'Immune defense', 'Clotting', 'Nutrient transport'], answer: 0,
-                    explanation: 'RBCs (erythrocytes) contain hemoglobin and transport oxygen from lungs to tissues.' },
-                { id: 'B9', q: 'Which hormone regulates blood glucose levels by promoting uptake into cells?', options: ['Insulin', 'Glucagon', 'Adrenaline', 'Thyroxine'],
-                    answer: 0, explanation: 'Insulin promotes cellular glucose uptake and lowers blood sugar. Glucagon raises blood sugar.' },
-                { id: 'B10', q: 'The type of muscle found in the heart is:', options: ['Cardiac muscle', 'Skeletal muscle', 'Smooth muscle', 'Striated voluntary'], answer: 0,
-                    explanation: 'Cardiac muscle is involuntary, striated, and found only in the heart.' },
-                { id: 'B11', q: 'The process by which plants lose water vapor from leaves is:', options: ['Transpiration', 'Photosynthesis', 'Respiration', 'Guttation'], answer: 0,
-                    explanation: 'Transpiration is the loss of water vapor from plant leaves through stomata.' },
-                { id: 'B12', q: 'Which is not a type of RNA?', options: ['mRNA', 'tRNA', 'rRNA', 'dRNA'], answer: 3,
-                    explanation: 'dRNA is not a standard type; the three main RNAs are mRNA, tRNA, and rRNA.' },
-                { id: 'B13', q: 'The human kidney is part of which system?', options: ['Excretory', 'Digestive', 'Circulatory', 'Respiratory'], answer: 0,
-                    explanation: 'The kidneys are the primary organs of the excretory (urinary) system.' },
-                { id: 'B14', q: 'Which of the following is a prokaryotic organism?', options: ['E. coli', 'Yeast', 'Amoeba', 'Paramecium'], answer: 0,
-                    explanation: 'E. coli is a bacterium (prokaryote). Yeast, Amoeba, and Paramecium are eukaryotes.' },
-                { id: 'B15', q: 'The function of stomata in plants is:', options: ['Gas exchange', 'Photosynthesis', 'Water absorption', 'Mineral transport'], answer: 0,
-                    explanation: 'Stomata regulate gas exchange (CO₂ in, O₂ out) and water vapor (transpiration).' },
-                { id: 'B16', q: 'Which blood type is the universal recipient?', options: ['AB+', 'O−', 'A+', 'B+'], answer: 0,
-                    explanation: 'AB+ individuals have no antibodies to A, B, or Rh antigens, so they can receive any blood type.' },
-                { id: 'B17', q: 'The process of making a copy of DNA is called:', options: ['Replication', 'Transcription', 'Translation', 'Transduction'], answer: 0,
-                    explanation: 'DNA replication is the process of producing two identical copies from one DNA molecule.' },
-                { id: 'B18', q: 'Which vitamin is produced by the human body upon exposure to sunlight?', options: ['Vitamin D', 'Vitamin C', 'Vitamin B12', 'Vitamin A'],
-                    answer: 0, explanation: 'Vitamin D (cholecalciferol) is synthesized in the skin upon UVB exposure.' },
-                { id: 'B19', q: 'The smallest bone in the human body is:', options: ['Stapes', 'Malleus', 'Incus', 'Patella'], answer: 0,
-                    explanation: 'The stapes (stirrup) in the middle ear is the smallest bone, about 3 mm long.' },
-                { id: 'B20', q: 'Which of the following is a genetic disorder?', options: ['Down syndrome', 'Malaria', 'Tuberculosis', 'Cholera'], answer: 0,
-                    explanation: 'Down syndrome (trisomy 21) is a genetic/chromosomal disorder. The others are infectious diseases.' }
-            ],
-            "General Paper": [
-                { id: 'G1', q: 'The Federal Republic of Nigeria operates a presidential system of government similar to which country?', options: ['United States', 'United Kingdom',
-                        'France', 'China'
-                    ], answer: 0, explanation: 'Nigeria\'s presidential system is modeled after the United States, with a directly elected president and separation of powers.' },
-                { id: 'G2', q: 'The concept of "rule of law" was popularized by:', options: ['A.V. Dicey', 'John Locke', 'Thomas Hobbes', 'Jean-Jacques Rousseau'], answer: 0,
-                    explanation: 'A.V. Dicey, a British jurist, is credited with popularizing the concept of the rule of law in his 1885 book "Introduction to the Study of the Law of the Constitution."' },
-                { id: 'G3', q: 'Which of the following is a greenhouse gas?', options: ['Methane', 'Oxygen', 'Nitrogen', 'Argon'], answer: 0,
-                    explanation: 'Methane (CH₄) is a potent greenhouse gas. Oxygen, nitrogen, and argon are not significant greenhouse gases.' },
-                { id: 'G4', q: 'The highest decision-making body in the United Nations is:', options: ['General Assembly', 'Security Council', 'International Court of Justice',
-                        'Secretariat'
-                    ], answer: 1,
-                    explanation: 'The UN Security Council is the most powerful body, responsible for maintaining international peace and security. The General Assembly is the main deliberative body but its resolutions are not binding.' },
-                { id: 'G5', q: 'Which Nigerian author won the Nobel Prize in Literature?', options: ['Wole Soyinka', 'Chinua Achebe', 'Buchi Emecheta', 'Ben Okri'], answer: 0,
-                    explanation: 'Wole Soyinka won the Nobel Prize in Literature in 1986, the first African to do so.' },
-                { id: 'G6', q: 'The theory of separation of powers is associated with:', options: ['Montesquieu', 'Rousseau', 'Locke', 'Hobbes'], answer: 0,
-                    explanation: 'Montesquieu, in his work "The Spirit of the Laws," articulated the theory of separation of powers into legislative, executive, and judicial branches.' },
-                { id: 'G7', q: 'Which of the following is not a member of the BRICS group?', options: ['Nigeria', 'Brazil', 'Russia', 'China'], answer: 0,
-                    explanation: 'BRICS comprises Brazil, Russia, India, China, and South Africa. Nigeria is not a member.' },
-                { id: 'G8', q: 'The organ responsible for human vision is the:', options: ['Eye', 'Ear', 'Nose', 'Skin'], answer: 0,
-                    explanation: 'The eye is the organ of vision, detecting light and converting it into neural signals.' },
-                { id: 'G9', q: 'The term "pros and cons" is derived from:', options: ['Latin', 'Greek', 'French', 'German'], answer: 0,
-                    explanation: '"Pros and cons" comes from the Latin "pro et contra," meaning "for and against."' },
-                { id: 'G10', q: 'Which of the following is a renewable energy source?', options: ['Solar power', 'Coal', 'Natural gas', 'Nuclear fission'], answer: 0,
-                    explanation: 'Solar power is renewable. Coal, natural gas, and nuclear fission are non-renewable.' },
-                { id: 'G11', q: 'The Nigerian currency is the:', options: ['Naira', 'Cedi', 'Kobo', 'Shilling'], answer: 0,
-                    explanation: 'The naira (₦) is the official currency of Nigeria, subdivided into 100 kobo.' },
-                { id: 'G12', q: 'The first computer programmer is widely considered to be:', options: ['Ada Lovelace', 'Alan Turing', 'Charles Babbage', 'Grace Hopper'], answer: 0,
-                    explanation: 'Ada Lovelace is regarded as the first computer programmer for her work on Charles Babbage\'s Analytical Engine in the 1840s.' },
-                { id: 'G13', q: 'Which of the following is not a fundamental human right?', options: ['Right to free education', 'Right to life', 'Right to liberty',
-                        'Right to freedom of thought'
-                    ], answer: 0,
-                    explanation: 'While education is important, the "right to free education" is not universally recognized as a fundamental human right in the same way as life, liberty, and thought.' },
-                { id: 'G14', q: 'The largest ocean on Earth is:', options: ['Pacific Ocean', 'Atlantic Ocean', 'Indian Ocean', 'Arctic Ocean'], answer: 0,
-                    explanation: 'The Pacific Ocean is the largest, covering about 63 million square miles (165 million km²).' },
-                { id: 'G15', q: 'The process of voting to remove an elected official from office is called:', options: ['Impeachment', 'Recall', 'Referendum', 'Plebiscite'],
-                    answer: 1,
-                    explanation: 'Recall is a process by which voters can remove an elected official before the end of their term. Impeachment is a legislative process that can lead to removal.' },
-                { id: 'G16', q: 'Which of the following is a form of government where power is held by a small group?', options: ['Oligarchy', 'Democracy', 'Monarchy', 'Theocracy'],
-                    answer: 0, explanation: 'Oligarchy means rule by a small, elite group. Democracy is rule by the people; monarchy is rule by a single hereditary ruler.' },
-                { id: 'G17', q: 'The UNILAG motto is:', options: ['In Deo Veritas', 'In God We Trust', 'Knowledge for Service', 'Excellence and Integrity'], answer: 0,
-                    explanation: 'The University of Lagos motto is "In Deo Veritas" (Truth in God).' },
-                { id: 'G18', q: 'Which of the following is not a type of intellectual property?', options: ['Copyright', 'Patent', 'Trademark', 'License'], answer: 3,
-                    explanation: 'Copyright, patents, and trademarks are forms of intellectual property. A license is a permission to use property, not a type of IP itself.' },
-                { id: 'G19', q: 'The process of converting a solid directly to a gas is called:', options: ['Sublimation', 'Condensation', 'Vaporization', 'Deposition'], answer: 0,
-                    explanation: 'Sublimation is the transition from solid to gas without passing through a liquid phase. Deposition is gas to solid.' },
-                { id: 'G20', q: 'Which of the following is a social media platform?', options: ['Twitter', 'Google', 'Yahoo', 'Bing'], answer: 0,
-                    explanation: 'Twitter (X) is a social media platform. Google, Yahoo, and Bing are search engines.' }
-            ]
+        document.getElementById('prevBtn')?.addEventListener('click', () => {
+          if (state.current > 0) { state.current--; render(); }
+        });
+        document.getElementById('nextBtn')?.addEventListener('click', () => {
+          if (state.current < state.questions.length-1) { state.current++; render(); }
+        });
+        document.getElementById('flagBtn').addEventListener('click', () => {
+          if (state.flagged.has(q.id)) state.flagged.delete(q.id);
+          else state.flagged.add(q.id);
+          render();
+        });
+        document.getElementById('submitExamBtn')?.addEventListener('click', submitExam);
+        document.getElementById('submitExamBtnMain')?.addEventListener('click', submitExam);
+        document.getElementById('toggleCalcBtn')?.addEventListener('click', openCalculator);
+
+        document.querySelectorAll('.palette-btn').forEach(btn => {
+          btn.addEventListener('click', e => {
+            const idx = parseInt(e.target.dataset.index);
+            state.current = idx;
+            render();
+          });
+        });
+
+        if (state.stream) {
+          const liveVideo = document.getElementById('liveCamera');
+          if (liveVideo) liveVideo.srcObject = state.stream;
+        }
+      }
+
+      function addViolation(msg) {
+        state.violations++;
+        state.warningMsg = `⚠️ Warning ${state.violations}/3: ${msg}${state.violations>=3?'\n\nExam submitted automatically.':''}`;
+        state.showWarning = true;
+        showViolationModal();
+        const badge = document.querySelector('.violation-badge');
+        if (badge) badge.textContent = `${state.violations}/3`;
+        if (state.violations >= 3) setTimeout(submitExam, 2000);
+      }
+
+      function showViolationModal() {
+        const existing = document.querySelector('.modal-overlay');
+        if (existing) existing.remove();
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+          <div class="modal-box" style="border:2px solid #ef4444;">
+            <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+            <h3 style="color:#ef4444;">Malpractice Detected</h3>
+            <p style="color:#fca5a5;white-space:pre-line;">${state.warningMsg}</p>
+            ${state.violations < 3 ? '<button id="closeWarning" class="btn-purple">I Understand, Continue</button>' : ''}
+          </div>`;
+        document.body.appendChild(overlay);
+        document.getElementById('closeWarning')?.addEventListener('click', () => {
+          overlay.remove();
+          state.showWarning = false;
+        });
+      }
+
+      // ─── ANTI-CHEAT ─────────────────────────────────────────────
+      window.addEventListener('blur', () => {
+        if (state.stage === 'exam' && !state.submitted) addViolation('You left the exam window.');
+      });
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('selectstart', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if (state.stage !== 'exam') return;
+        if (e.key === 'F12' || (e.ctrlKey && ['u','U','c','C','v','V','x','X','i','I','j','J','s','S','p','P'].includes(e.key)) || (e.ctrlKey && e.shiftKey)) {
+          e.preventDefault();
+          addViolation('Forbidden key combination.');
+        }
+      });
+
+      // ─── CALCULATOR ─────────────────────────────────────────────
+      function openCalculator() {
+        if (state.showCalc) return;
+        state.showCalc = true;
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = 'calcOverlay';
+        overlay.innerHTML = `
+          <div class="modal-box" style="max-width:240px;">
+            <div class="calc-display" id="calcDisplay">0</div>
+            <div class="calc-grid">
+              <button class="calc-btn calc-clear" data-val="C">C</button>
+              <button class="calc-btn calc-op" data-val="/">÷</button>
+              <button class="calc-btn calc-op" data-val="*">×</button>
+              <button class="calc-btn calc-op" data-val="-">-</button>
+              <button class="calc-btn" data-val="7">7</button>
+              <button class="calc-btn" data-val="8">8</button>
+              <button class="calc-btn" data-val="9">9</button>
+              <button class="calc-btn calc-op" data-val="+">+</button>
+              <button class="calc-btn" data-val="4">4</button>
+              <button class="calc-btn" data-val="5">5</button>
+              <button class="calc-btn" data-val="6">6</button>
+              <button class="calc-btn calc-op" data-val="=">=</button>
+              <button class="calc-btn" data-val="1">1</button>
+              <button class="calc-btn" data-val="2">2</button>
+              <button class="calc-btn" data-val="3">3</button>
+              <button class="calc-btn" data-val="0" style="grid-column:span 2;">0</button>
+              <button class="calc-btn" data-val=".">.</button>
+            </div>
+            <button id="closeCalcBtn" style="margin-top:12px;width:100%;background:#ef4444;color:#fff;padding:10px;border-radius:8px;">Close</button>
+          </div>`;
+        document.body.appendChild(overlay);
+
+        let calcDisplay = '0', calcPrev = null, calcOp = null, calcFresh = false;
+        const updateDisplay = () => document.getElementById('calcDisplay').textContent = calcDisplay;
+
+        overlay.querySelectorAll('[data-val]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const val = btn.dataset.val;
+            if (val === 'C') { calcDisplay = '0'; calcPrev = null; calcOp = null; calcFresh = false; }
+            else if (val === '=') {
+              if (calcOp && calcPrev !== null) {
+                const a = parseFloat(calcPrev), b = parseFloat(calcDisplay);
+                let r = calcOp === '+' ? a+b : calcOp === '-' ? a-b : calcOp === '×' ? a*b : calcOp === '÷' ? (b===0 ? 'Error' : a/b) : b;
+                calcDisplay = r === 'Error' ? 'Error' : String(parseFloat(r.toFixed(8)));
+                calcPrev = null; calcOp = null; calcFresh = true;
+              }
+            } else if (['+','-','×','÷'].includes(val)) {
+              calcPrev = calcDisplay; calcOp = val; calcFresh = true;
+            } else {
+              if (val === '.' && calcDisplay.includes('.')) return;
+              calcDisplay = (calcDisplay === '0' || calcFresh) ? (val === '.' ? '0.' : val) : calcDisplay + val;
+              calcFresh = false;
+            }
+            updateDisplay();
+          });
+        });
+
+        document.getElementById('closeCalcBtn').addEventListener('click', () => {
+          overlay.remove();
+          state.showCalc = false;
+        });
+      }
+
+      // ─── SUBMIT & EMAIL ─────────────────────────────────────────
+      function submitExam() {
+        if (state.submitted) return;
+        state.submitted = true;
+        clearInterval(state.timerInterval);
+        if (state.stream) state.stream.getTracks().forEach(t => t.stop());
+
+        const results = calcResults();
+        const timeUsedSec = 30*60 - state.timeLeft;
+        const timeUsedStr = `${Math.floor(timeUsedSec/60)}m ${timeUsedSec%60}s`;
+
+        // Send email to admin (NIN removed from template params)
+        const templateParams = {
+          candidate_name: state.candidate.name,
+          candidate_email: state.candidate.email,
+          candidate_phone: state.candidate.phone,
+          candidate_nin: '',   // not collected, kept empty
+          score: results.score,
+          total: results.total,
+          percentage: results.pct,
+          time_used: timeUsedStr,
+          violations: state.violations,
+          exam_date: new Date().toLocaleString('en-NG', { dateStyle: 'full', timeStyle: 'short' }),
+          to_email: ADMIN_EMAIL,
         };
 
-        // ============================================================
-        // 3. STATE
-        // ============================================================
-        const state = {
-            user: null,
-            selectedSubjects: [],
-            questions: [], // flat array of all exam questions (shuffled)
-            currentIndex: 0,
-            answers: {}, // { questionId: selectedOptionIndex }
-            timerSeconds: 0,
-            timerInterval: null,
-            totalTime: 0, // in minutes
-            submitted: false,
-            results: null,
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+          .then(() => console.log('✅ Result emailed to admin'))
+          .catch(err => console.warn('⚠️ Email failed:', err));
+
+        state.stage = 'result';
+        render();
+      }
+
+      function calcResults() {
+        let correct = 0, unanswered = 0;
+        state.questions.forEach(q => {
+          const a = state.answers[q.id];
+          if (!a) { unanswered++; return; }
+          if (a.trim().toLowerCase() === q.answer.trim().toLowerCase()) correct++;
+        });
+        return {
+          score: correct,
+          total: state.questions.length,
+          pct: Math.round((correct / state.questions.length) * 100),
+          unanswered,
+          wrong: state.questions.length - correct - unanswered,
         };
+      }
 
-        const SUBJECTS = ['English', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'General Paper'];
-        const QUESTIONS_PER_SUBJECT = 20;
-        const DEFAULT_TIME = 120; // minutes
+      // ─── RESULT PAGE ────────────────────────────────────────────
+      function renderResult() {
+        const { score, total, pct, unanswered, wrong } = calcResults();
+        const timeUsedSec = 30*60 - state.timeLeft;
+        const timeUsedStr = `${Math.floor(timeUsedSec/60)}m ${timeUsedSec%60}s`;
+        const pass = pct >= 50;
 
-        // ============================================================
-        // 4. DOM REFS
-        // ============================================================
-        const $ = id => document.getElementById(id);
-        const screens = {
-            login: $('screen-login'),
-            subjects: $('screen-subjects'),
-            instructions: $('screen-instructions'),
-            exam: $('screen-exam'),
-            results: $('screen-results'),
-        };
-        const toast = $('toast');
-
-        // ============================================================
-        // 5. UTILITY FUNCTIONS
-        // ============================================================
-        function shuffleArray(arr) {
-            const a = [...arr];
-            for (let i = a.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [a[i], a[j]] = [a[j], a[i]];
-            }
-            return a;
-        }
-
-        function showScreen(name) {
-            Object.keys(screens).forEach(k => {
-                screens[k].classList.toggle('active', k === name);
-            });
-        }
-
-        function showToast(msg, type = 'info', duration = 4000) {
-            toast.textContent = msg;
-            toast.className = 'toast ' + type + ' show';
-            clearTimeout(toast._hide);
-            toast._hide = setTimeout(() => { toast.classList.remove('show'); }, duration);
-        }
-
-        function formatTime(sec) {
-            const m = String(Math.floor(sec / 60)).padStart(2, '0');
-            const s = String(sec % 60).padStart(2, '0');
-            return `${m}:${s}`;
-        }
-
-        function getSubjectLabel(q) {
-            for (const [subject, questions] of Object.entries(QUESTION_BANK)) {
-                if (questions.some(qq => qq.id === q.id)) return subject;
-            }
-            return 'General Paper';
-        }
-
-        // ============================================================
-        // 6. LOGIN
-        // ============================================================
-        $('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const fields = {
-                firstName: $('firstName'),
-                lastName: $('lastName'),
-                email: $('email'),
-                phone: $('phone'),
-                course: $('course'),
-                examPin: $('examPin'),
-            };
-
-            let valid = true;
-
-            // Check each field
-            Object.keys(fields).forEach(key => {
-                const fg = $('fg-' + key);
-                const val = fields[key].value.trim();
-                if (!val) {
-                    fg.classList.add('error');
-                    valid = false;
-                } else {
-                    fg.classList.remove('error');
-                }
-            });
-
-            // Email validation
-            const emailVal = fields.email.value.trim();
-            if (emailVal && !/^\S+@\S+\.\S+$/.test(emailVal)) {
-                $('fg-email').classList.add('error');
-                $('fg-email').querySelector('.error-msg').textContent = 'Enter a valid email address';
-                valid = false;
-            } else {
-                $('fg-email').classList.remove('error');
-                $('fg-email').querySelector('.error-msg').textContent = 'Valid email is required';
-            }
-
-            // PIN validation
-            if (fields.examPin.value.trim() !== 'UNILAG2026') {
-                $('fg-pin').classList.add('error');
-                $('fg-pin').querySelector('.error-msg').textContent = 'Invalid PIN. Demo: UNILAG2026';
-                valid = false;
-            } else {
-                $('fg-pin').classList.remove('error');
-                $('fg-pin').querySelector('.error-msg').textContent = 'PIN is required (demo: UNILAG2026)';
-            }
-
-            if (!valid) {
-                showToast('Please fill all fields correctly.', 'error');
-                return;
-            }
-
-            // Save user
-            state.user = {
-                firstName: fields.firstName.value.trim(),
-                lastName: fields.lastName.value.trim(),
-                email: fields.email.value.trim(),
-                phone: fields.phone.value.trim(),
-                course: fields.course.value.trim(),
-            };
-
-            // Clear any previous selections
-            state.selectedSubjects = [];
-            renderSubjects();
-            showScreen('subjects');
-            showToast('Login successful! Select your subjects.', 'success', 2000);
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;';
+        div.innerHTML = `
+          <div class="card" style="width:100%;max-width:520px;text-align:center;">
+            <div style="font-size:60px;margin-bottom:8px;">${pass ? '🎉' : '📚'}</div>
+            <h2 style="margin:0 0 4px;font-size:26px;font-weight:800;color:${pass?'#10b981':'#ef4444'};">${pass ? 'PASS' : 'FAIL'}</h2>
+            <p style="color:#64748b;margin-bottom:24px;">2026 UNILAG Post-UTME Practice Result</p>
+            <div style="width:120px;height:120px;border-radius:50%;background:conic-gradient(${pass?'#10b981':'#ef4444'} ${pct*3.6}deg, rgba(255,255,255,0.1) 0deg);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+              <div style="width:96px;height:96px;border-radius:50%;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <span style="font-size:24px;font-weight:800;color:${pass?'#10b981':'#ef4444'};">${pct}%</span>
+                <span style="font-size:11px;color:#64748b;">${score}/${total}</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">
+              ${[['✅ Correct', score, '#10b981'], ['❌ Wrong', wrong, '#ef4444'], ['⏭️ Skipped', unanswered, '#f59e0b'], ['⏱ Time Used', timeUsedStr, '#a78bfa'], ['⚠️ Violations', state.violations, '#ef4444'], ['📝 Questions', total, '#7c3aed']]
+                .map(([lbl,val,col]) => `<div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:12px 8px;"><div style="font-size:11px;color:#64748b;">${lbl}</div><div style="font-size:20px;font-weight:800;color:${col};">${val}</div></div>`).join('')}
+            </div>
+            <div style="background:rgba(124,58,237,0.1);border-radius:10px;padding:12px 16px;margin-bottom:24px;font-size:14px;color:#cbd5e1;text-align:left;">
+              <div><strong style="color:#a78bfa;">Name:</strong> ${state.candidate.name}</div>
+              <div><strong style="color:#a78bfa;">Email:</strong> ${state.candidate.email}</div>
+              <div><strong style="color:#a78bfa;">Date:</strong> ${new Date().toLocaleDateString('en-NG',{dateStyle:'full'})}</div>
+            </div>
+            <button id="restartBtn" class="btn-purple" style="width:100%;">🔄 Start New Session</button>
+          </div>
+        `;
+        root.appendChild(div);
+        document.getElementById('restartBtn').addEventListener('click', () => {
+          state.stage = 'login';
+          state.candidate = { name:'', email:'', phone:'', pin:'' };
+          state.agreed = false;
+          state.checks = { camera:false, mic:false, fullscreen:false };
+          if (state.stream) { state.stream.getTracks().forEach(t=>t.stop()); state.stream = null; }
+          render();
         });
+      }
 
-        // ============================================================
-        // 7. SUBJECT SELECTION
-        // ============================================================
-        function renderSubjects() {
-            const grid = $('subjectGrid');
-            grid.innerHTML = '';
-            SUBJECTS.forEach(sub => {
-                const card = document.createElement('div');
-                card.className = 'subject-card';
-                card.dataset.subject = sub;
-                card.innerHTML = `${sub} <span class="badge">20 questions</span>`;
-                card.addEventListener('click', () => toggleSubject(sub));
-                if (state.selectedSubjects.includes(sub)) card.classList.add('selected');
-                grid.appendChild(card);
-            });
-            updateSubjectCount();
-        }
-
-        function toggleSubject(sub) {
-            const idx = state.selectedSubjects.indexOf(sub);
-            if (idx > -1) {
-                state.selectedSubjects.splice(idx, 1);
-            } else {
-                state.selectedSubjects.push(sub);
-            }
-            renderSubjects();
-        }
-
-        function updateSubjectCount() {
-            const count = state.selectedSubjects.length;
-            $('subjectCount').innerHTML = `Selected: <strong>${count}</strong> subjects (minimum 3)`;
-            $('btnStartExam').disabled = count < 3;
-        }
-
-        $('btnStartExam').addEventListener('click', function() {
-            if (state.selectedSubjects.length < 3) {
-                showToast('Please select at least 3 subjects.', 'error');
-                return;
-            }
-            showScreen('instructions');
-            populateInstructions();
-        });
-
-        $('btnBackToLogin').addEventListener('click', () => {
-            state.selectedSubjects = [];
-            renderSubjects();
-            showScreen('login');
-        });
-
-        // ============================================================
-        // 8. INSTRUCTIONS
-        // ============================================================
-        function populateInstructions() {
-            const count = state.selectedSubjects.length;
-            const totalQ = count * QUESTIONS_PER_SUBJECT;
-            const time = Math.max(20, count * 20);
-            state.totalTime = time;
-            $('inst-subject-count').textContent = count;
-            $('inst-total-q').textContent = totalQ;
-            $('inst-total-time').textContent = time;
-
-            const u = state.user;
-            $('candidateSummary').innerHTML = `
-                <div><strong>Name:</strong> ${u.firstName} ${u.lastName}</div>
-                <div><strong>Email:</strong> ${u.email}</div>
-                <div><strong>Phone:</strong> ${u.phone}</div>
-                <div><strong>Course:</strong> ${u.course}</div>
-                <div><strong>Subjects:</strong> ${state.selectedSubjects.join(', ')}</div>
-                <div><strong>Total Questions:</strong> ${totalQ}</div>
-                <div><strong>Time:</strong> ${time} minutes</div>
-            `;
-        }
-
-        $('btnBackToSubjects').addEventListener('click', () => {
-            showScreen('subjects');
-        });
-
-        $('btnBeginExam').addEventListener('click', function() {
-            startExam();
-        });
-
-        // ============================================================
-        // 9. EXAM ENGINE
-        // ============================================================
-        function startExam() {
-            let pool = [];
-            state.selectedSubjects.forEach(sub => {
-                const qs = QUESTION_BANK[sub] || [];
-                const shuffled = shuffleArray(qs);
-                pool.push(...shuffled.slice(0, QUESTIONS_PER_SUBJECT));
-            });
-            state.questions = shuffleArray(pool);
-            state.currentIndex = 0;
-            state.answers = {};
-            state.submitted = false;
-            state.results = null;
-
-            const total = state.questions.length;
-            $('total-q-num').textContent = total;
-            state.timerSeconds = state.totalTime * 60;
-
-            showScreen('exam');
-            renderQuestion();
-            renderPalette();
-            startTimer();
-
-            $('btnPrev').disabled = true;
-            $('btnNext').disabled = false;
-        }
-
-        function renderQuestion() {
-            const qs = state.questions;
-            const idx = state.currentIndex;
-            if (!qs.length || idx >= qs.length) return;
-            const q = qs[idx];
-            const subject = getSubjectLabel(q);
-
-            $('current-q-num').textContent = idx + 1;
-            $('exam-subject-label').textContent = `Subject: ${subject}`;
-
-            const container = $('questionContainer');
-            const selected = state.answers[q.id] !== undefined ? state.answers[q.id] : -1;
-
-            let html = `<div class="question-subject">${subject}</div>`;
-            html += `<div class="question-text">${q.q}</div>`;
-            html += `<div class="options">`;
-            q.options.forEach((opt, i) => {
-                const checked = selected === i ? 'checked' : '';
-                html += `
-                    <div class="option ${selected === i ? 'selected' : ''}" data-opt-index="${i}">
-                        <input type="radio" name="q_${q.id}" value="${i}" ${checked} />
-                        <span class="label">${String.fromCharCode(65 + i)}. ${opt}</span>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-            container.innerHTML = html;
-
-            container.querySelectorAll('.option').forEach(el => {
-                const radio = el.querySelector('input[type="radio"]');
-                radio.addEventListener('change', function() {
-                    const val = parseInt(this.value);
-                    state.answers[q.id] = val;
-                    container.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
-                    el.classList.add('selected');
-                    renderPalette();
-                });
-                el.addEventListener('click', function(e) {
-                    if (e.target.tagName !== 'INPUT') {
-                        const radio = this.querySelector('input[type="radio"]');
-                        radio.checked = true;
-                        radio.dispatchEvent(new Event('change'));
-                    }
-                });
-            });
-
-            $('btnPrev').disabled = idx === 0;
-            $('btnNext').disabled = idx === qs.length - 1;
-            renderPalette();
-        }
-
-        function renderPalette() {
-            const qs = state.questions;
-            const palette = $('questionPalette');
-            palette.innerHTML = '';
-            qs.forEach((q, i) => {
-                const pill = document.createElement('div');
-                pill.className = 'pill';
-                if (i === state.currentIndex) pill.classList.add('active');
-                if (state.answers[q.id] !== undefined) pill.classList.add('answered');
-                pill.textContent = i + 1;
-                pill.addEventListener('click', () => {
-                    state.currentIndex = i;
-                    renderQuestion();
-                    renderPalette();
-                });
-                palette.appendChild(pill);
-            });
-        }
-
-        // ============================================================
-        // 10. TIMER
-        // ============================================================
-        function startTimer() {
-            if (state.timerInterval) clearInterval(state.timerInterval);
-            updateTimerDisplay();
-            state.timerInterval = setInterval(() => {
-                state.timerSeconds--;
-                updateTimerDisplay();
-                if (state.timerSeconds <= 0) {
-                    clearInterval(state.timerInterval);
-                    submitExam(true);
-                }
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            const el = $('examTimer');
-            el.textContent = formatTime(state.timerSeconds);
-            if (state.timerSeconds < 120) {
-                el.classList.add('warning');
-            } else {
-                el.classList.remove('warning');
-            }
-        }
-
-        // ============================================================
-        // 11. NAVIGATION
-        // ============================================================
-        $('btnPrev').addEventListener('click', () => {
-            if (state.currentIndex > 0) {
-                state.currentIndex--;
-                renderQuestion();
-                renderPalette();
-            }
-        });
-
-        $('btnNext').addEventListener('click', () => {
-            if (state.currentIndex < state.questions.length - 1) {
-                state.currentIndex++;
-                renderQuestion();
-                renderPalette();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (!screens.exam.classList.contains('active')) return;
-            if (e.key === 'ArrowLeft') $('btnPrev').click();
-            if (e.key === 'ArrowRight') $('btnNext').click();
-        });
-
-        // ============================================================
-        // 12. SUBMIT
-        // ============================================================
-        $('btnSubmitExam').addEventListener('click', () => {
-            if (confirm('Are you sure you want to submit your exam?')) {
-                submitExam(false);
-            }
-        });
-
-        function submitExam(timeUp = false) {
-            if (state.submitted) return;
-            state.submitted = true;
-            if (state.timerInterval) {
-                clearInterval(state.timerInterval);
-                state.timerInterval = null;
-            }
-
-            const qs = state.questions;
-            let correct = 0;
-            let wrong = 0;
-            const review = [];
-
-            qs.forEach((q, i) => {
-                const userAns = state.answers[q.id];
-                const isCorrect = userAns === q.answer;
-                if (isCorrect) correct++;
-                else wrong++;
-                review.push({
-                    index: i,
-                    question: q,
-                    userAnswer: userAns !== undefined ? q.options[userAns] : 'Not answered',
-                    correctAnswer: q.options[q.answer],
-                    isCorrect: isCorrect,
-                    explanation: q.explanation || 'No explanation provided.',
-                    subject: getSubjectLabel(q),
-                });
-            });
-
-            const total = qs.length;
-            const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-            state.results = {
-                correct,
-                wrong,
-                total,
-                percentage,
-                review,
-                timeUp,
-            };
-
-            showResults();
-            sendEmail();
-        }
-
-        // ============================================================
-        // 13. RESULTS
-        // ============================================================
-        function showResults() {
-            showScreen('results');
-            const r = state.results;
-            const u = state.user;
-            $('result-candidate-name').textContent = `${u.firstName} ${u.lastName} · ${u.course}`;
-
-            $('resultSummary').innerHTML = `
-                <div class="result-card ${r.percentage >= 50 ? 'pass' : 'fail'}">
-                    <div class="number">${r.percentage}%</div>
-                    <div class="label">Score</div>
-                </div>
-                <div class="result-card pass">
-                    <div class="number">${r.correct}</div>
-                    <div class="label">Correct</div>
-                </div>
-                <div class="result-card fail">
-                    <div class="number">${r.wrong}</div>
-                    <div class="label">Wrong</div>
-                </div>
-                <div class="result-card">
-                    <div class="number">${r.total}</div>
-                    <div class="label">Total Questions</div>
-                </div>
-            `;
-
-            $('reviewContainer').style.display = 'none';
-            $('reviewList').innerHTML = '';
-            $('emailStatus').textContent = '📧 Sending results to teacher...';
-        }
-
-        $('btnToggleReview').addEventListener('click', function() {
-            const container = $('reviewContainer');
-            if (container.style.display === 'none') {
-                container.style.display = 'block';
-                renderReview();
-                this.textContent = '📘 Hide Review';
-            } else {
-                container.style.display = 'none';
-                this.textContent = '📋 Review Wrong Answers';
-            }
-        });
-
-        function renderReview() {
-            const list = $('reviewList');
-            const r = state.results;
-            const wrongItems = r.review.filter(item => !item.isCorrect);
-            if (!wrongItems.length) {
-                list.innerHTML = '<p style="color:#2e7d32;font-weight:600;">🎉 Perfect! No wrong answers.</p>';
-                return;
-            }
-            let html = '';
-            wrongItems.forEach((item, i) => {
-                html += `
-                    <div class="review-item">
-                        <div class="r-q">Q${item.index+1} [${item.subject}]</div>
-                        <div style="font-weight:500;margin-bottom:2px;">${item.question.q}</div>
-                        <div class="r-answer"><strong>Your answer:</strong> ${item.userAnswer}</div>
-                        <div class="r-answer"><strong>Correct answer:</strong> ${item.correctAnswer}</div>
-                        <div class="r-explanation"><strong>💡 Explanation:</strong> ${item.explanation}</div>
-                    </div>
-                `;
-            });
-            list.innerHTML = html;
-        }
-
-        $('btnPrintResults').addEventListener('click', () => {
-            window.print();
-        });
-
-        $('btnRestart').addEventListener('click', () => {
-            if (confirm('Restart the exam? All progress will be lost.')) {
-                state.selectedSubjects = [];
-                state.questions = [];
-                state.answers = {};
-                state.results = null;
-                state.submitted = false;
-                if (state.timerInterval) {
-                    clearInterval(state.timerInterval);
-                    state.timerInterval = null;
-                }
-                showScreen('login');
-                $('loginForm').reset();
-            }
-        });
-
-        // ============================================================
-        // 14. EMAIL SYSTEM (EmailJS)
-        // ============================================================
-        function sendEmail() {
-            const u = state.user;
-            const r = state.results;
-            const wrongReview = r.review.filter(item => !item.isCorrect).map(item =>
-                `Q${item.index+1} [${item.subject}]: ${item.question.q}\nYour: ${item.userAnswer} | Correct: ${item.correctAnswer}\nExplanation: ${item.explanation}`
-            ).join('\n\n');
-
-            const params = {
-                first_name: u.firstName,
-                last_name: u.lastName,
-                email: u.email,
-                phone: u.phone,
-                course: u.course,
-                subjects: state.selectedSubjects.join(', '),
-                score: `${r.correct}/${r.total}`,
-                percentage: `${r.percentage}%`,
-                correct: r.correct,
-                wrong: r.wrong,
-                total: r.total,
-                wrong_review: wrongReview || 'No wrong answers!',
-                time_up: r.timeUp ? 'Yes (Time expired)' : 'No',
-            };
-
-            emailjs.send('service_ezqn58p', 'template_8maj0c4', params)
-                .then(() => {
-                    $('emailStatus').textContent = '✅ Results sent successfully to the teacher.';
-                    showToast('✅ Results sent to teacher!', 'success');
-                })
-                .catch((err) => {
-                    console.error('EmailJS error:', err);
-                    $('emailStatus').textContent = '⚠️ Failed to send email. Please contact the admin.';
-                    showToast('⚠️ Email sending failed. Check console.', 'error');
-                });
-        }
-
-        // ============================================================
-        // 15. KEYBOARD SHORTCUTS & INIT
-        // ============================================================
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                if (screens.exam.classList.contains('active')) {
-                    $('btnSubmitExam').click();
-                }
-            }
-        });
-
-        // Initial render
-        renderSubjects();
-
-        console.log('✅ UNILAG Post-UTME CBT Simulator V2 loaded (JAMB field removed).');
-        console.log(`📚 ${Object.values(QUESTION_BANK).flat().length} total questions loaded.`);
-    </script>
-
+      // ─── INIT ───────────────────────────────────────────────────
+      render();
+    })();
+  </script>
 </body>
 </html>
