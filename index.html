@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>OIMI CBT Portal – Proctored (with Face Tracking)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>UNILAG CBT Portal – Proctored (with Face Tracking)</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -106,99 +106,83 @@
       width: 60px; height: 8px; background: #333; border-radius: 4px; overflow: hidden; display: inline-block;
     }
     .noise-fill { height: 100%; background: #f59e0b; width: 0%; transition: width 0.1s; }
-    .face-status-dot {
-      display: inline-block; width: 10px; height: 10px; border-radius: 50%;
-      margin-right: 4px; transition: background 0.3s;
-    }
-    .face-status-dot.loading { background: #f59e0b; animation: pulse-dot 1s infinite; }
-    .face-status-dot.ok { background: #10b981; }
-    .face-status-dot.error { background: #ef4444; }
-    .face-status-dot.off { background: #64748b; }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
-    }
     @media (max-width: 768px) {
       .exam-layout { flex-direction: column; }
-      .sidebar { width: 100% !important; flex-direction: row; flex-wrap: wrap; }
+      .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; }
     }
   </style>
 </head>
 <body>
   <div id="root" class="app"></div>
 
-  <!-- EmailJS -->
+  <!-- EmailJS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-  <!-- MediaPipe Face Mesh (classic, more stable) -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1646425221/face_mesh.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029078/camera_utils.js" defer></script>
+  <!-- MediaPipe Face Mesh (loaded on demand) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" defer></script>
 
   <script>
     (() => {
-      // ─── EMAILJS ──────────────────────────────────────────────
+      // ⚠️ YOUR EMAILJS CREDENTIALS – in production, move these to a backend
       const EMAILJS_USER_ID = "mt3HJUIfu1kcIMjGb";
       const EMAILJS_SERVICE_ID = "service_rrx6495";
       const EMAILJS_TEMPLATE_ID = "template_gf9ilrc";
       const ADMIN_EMAIL = "oimi6702@gmail.com";
 
-      if (window.emailjs) {
-        emailjs.init(EMAILJS_USER_ID);
-      } else {
-        console.warn('EmailJS not loaded.');
-      }
+      emailjs.init(EMAILJS_USER_ID);
 
-      // ─── QUESTION BANK ────────────────────────────────────────
+      // ─── QUESTION BANK: 15 Math, 15 English, 10 General Knowledge ──
       const QUESTION_BANK = {
         Mathematics: [
-          { id: "m1", type: "mcq", question: "Simplify: 3x² + 2x² − x²", options: ["4x²", "5x²", "6x²", "3x²"], answer: "4x²" },
-          { id: "m2", type: "mcq", question: "If 2x + 3 = 11, find x", options: ["3", "4", "5", "6"], answer: "4" },
-          { id: "m3", type: "mcq", question: "What is the simple interest on ₦5,000 at 8% per annum for 3 years?", options: ["₦1,000", "₦1,200", "₦1,500", "₦2,000"], answer: "₦1,200" },
-          { id: "m4", type: "mcq", question: "Find the value of x: 5x − 7 = 3x + 9", options: ["6", "7", "8", "9"], answer: "8" },
-          { id: "m5", type: "mcq", question: "A trader bought goods for ₦8,000 and sold for ₦10,000. Find the percentage profit.", options: ["20%", "25%", "15%", "30%"], answer: "25%" },
-          { id: "m6", type: "mcq", question: "Evaluate: log₁₀ 1000", options: ["2", "3", "4", "10"], answer: "3" },
-          { id: "m7", type: "mcq", question: "The sum of interior angles of a hexagon is:", options: ["540°", "620°", "720°", "800°"], answer: "720°" },
-          { id: "m8", type: "mcq", question: "If P = {2,4,6,8} and Q = {1,2,3,4}, find P ∩ Q", options: ["{2,4}", "{1,2,3,4,6,8}", "{6,8}", "{1,3}"], answer: "{2,4}" },
-          { id: "m9", type: "saq", question: "If the area of a square is 64 cm², what is the length of one side? (write in digits)", answer: "8" },
-          { id: "m10", type: "saq", question: "A man scores 15 out of 20. What is his percentage score? (write in digits only, no % sign)", answer: "75" },
-          { id: "m11", type: "mcq", question: "Solve: 3(x+2) = 21", options: ["5", "6", "7", "8"], answer: "7" },
-          { id: "m12", type: "mcq", question: "The slope of the line y = 2x + 5 is:", options: ["2", "5", "-2", "-5"], answer: "2" },
-          { id: "m13", type: "saq", question: "If a triangle has angles 50° and 60°, what is the third angle? (digits only)", answer: "70" },
-          { id: "m14", type: "mcq", question: "What is 20% of 150?", options: ["20", "30", "35", "25"], answer: "30" },
-          { id: "m15", type: "mcq", question: "Factorise: x² - 9", options: ["(x-3)(x+3)", "(x-9)(x+1)", "(x-3)(x-3)", "(x+9)(x-1)"], answer: "(x-3)(x+3)" },
+          { id:"m1", type:"mcq", question:"Simplify: 3x² + 2x² − x²", options:["4x²","5x²","6x²","3x²"], answer:"4x²" },
+          { id:"m2", type:"mcq", question:"If 2x + 3 = 11, find x", options:["3","4","5","6"], answer:"4" },
+          { id:"m3", type:"mcq", question:"What is the simple interest on ₦5,000 at 8% per annum for 3 years?", options:["₦1,000","₦1,200","₦1,500","₦2,000"], answer:"₦1,200" },
+          { id:"m4", type:"mcq", question:"Find the value of x: 5x − 7 = 3x + 9", options:["6","7","8","9"], answer:"8" },
+          { id:"m5", type:"mcq", question:"A trader bought goods for ₦8,000 and sold for ₦10,000. Find the percentage profit.", options:["20%","25%","15%","30%"], answer:"25%" },
+          { id:"m6", type:"mcq", question:"Evaluate: log₁₀ 1000", options:["2","3","4","10"], answer:"3" },
+          { id:"m7", type:"mcq", question:"The sum of interior angles of a hexagon is:", options:["540°","620°","720°","800°"], answer:"720°" },
+          { id:"m8", type:"mcq", question:"If P = {2,4,6,8} and Q = {1,2,3,4}, find P ∩ Q", options:["{2,4}","{1,2,3,4,6,8}","{6,8}","{1,3}"], answer:"{2,4}" },
+          { id:"m9", type:"saq", question:"If the area of a square is 64 cm², what is the length of one side? (write in digits)", answer:"8" },
+          { id:"m10", type:"saq", question:"A man scores 15 out of 20. What is his percentage score? (write in digits only, no % sign)", answer:"75" },
+          { id:"m11", type:"mcq", question:"Solve: 3(x+2) = 21", options:["5","6","7","8"], answer:"7" },
+          { id:"m12", type:"mcq", question:"The slope of the line y = 2x + 5 is:", options:["2","5","-2","-5"], answer:"2" },
+          { id:"m13", type:"saq", question:"If a triangle has angles 50° and 60°, what is the third angle? (digits only)", answer:"70" },
+          { id:"m14", type:"mcq", question:"What is 20% of 150?", options:["20","30","35","25"], answer:"30" },
+          { id:"m15", type:"mcq", question:"Factorise: x² - 9", options:["(x-3)(x+3)","(x-9)(x+1)","(x-3)(x-3)","(x+9)(x-1)"], answer:"(x-3)(x+3)" },
         ],
         English: [
-          { id: "e1", type: "mcq", question: "Choose the word closest in meaning to BENEVOLENT:", options: ["Cruel", "Generous", "Selfish", "Hostile"], answer: "Generous" },
-          { id: "e2", type: "mcq", question: "Choose the antonym of TURBULENT:", options: ["Calm", "Stormy", "Rough", "Wild"], answer: "Calm" },
-          { id: "e3", type: "mcq", question: "Select the correct sentence:", options: ["Each of the boys have a pen", "Each of the boys has a pen", "Each of the boy have a pen", "Each of the boys are having a pen"], answer: "Each of the boys has a pen" },
-          { id: "e4", type: "mcq", question: "The plural of 'phenomenon' is:", options: ["Phenomenons", "Phenomenas", "Phenomena", "Phenomenes"], answer: "Phenomena" },
-          { id: "e5", type: "mcq", question: "Choose the word opposite in meaning to LOQUACIOUS:", options: ["Talkative", "Verbose", "Taciturn", "Garrulous"], answer: "Taciturn" },
-          { id: "e6", type: "mcq", question: "Identify the figure of speech: 'The wind whispered through the trees'", options: ["Simile", "Metaphor", "Personification", "Hyperbole"], answer: "Personification" },
-          { id: "e7", type: "mcq", question: "Choose the correct spelling:", options: ["Accomodate", "Accommodate", "Acomodate", "Acommodate"], answer: "Accommodate" },
-          { id: "e8", type: "mcq", question: "Fill in: She has been studying _____ morning.", options: ["since", "from", "for", "during"], answer: "since" },
-          { id: "e9", type: "saq", question: "What is the one-word synonym for 'very hungry'? (lowercase)", answer: "famished" },
-          { id: "e10", type: "saq", question: "Complete the proverb: 'A stitch in time saves ___' (write the number in words)", answer: "nine" },
-          { id: "e11", type: "mcq", question: "Which is the correct comparative form of 'good'?", options: ["badder", "gooder", "better", "best"], answer: "better" },
-          { id: "e12", type: "mcq", question: "Identify the part of speech of the word in caps: 'She RUNS daily.'", options: ["Noun", "Verb", "Adjective", "Adverb"], answer: "Verb" },
-          { id: "e13", type: "saq", question: "Give the antonym of 'ascend' (lowercase)", answer: "descend" },
-          { id: "e14", type: "mcq", question: "Choose the word that means 'to make a mistake':", options: ["Erratic", "Errand", "Err", "Erode"], answer: "Err" },
-          { id: "e15", type: "mcq", question: "Select the correctly punctuated sentence:", options: ["Its a beautiful day.", "It's a beautiful day.", "Its' a beautiful day.", "It is' a beautiful day."], answer: "It's a beautiful day." },
+          { id:"e1", type:"mcq", question:"Choose the word closest in meaning to BENEVOLENT:", options:["Cruel","Generous","Selfish","Hostile"], answer:"Generous" },
+          { id:"e2", type:"mcq", question:"Choose the antonym of TURBULENT:", options:["Calm","Stormy","Rough","Wild"], answer:"Calm" },
+          { id:"e3", type:"mcq", question:"Select the correct sentence:", options:["Each of the boys have a pen","Each of the boys has a pen","Each of the boy have a pen","Each of the boys are having a pen"], answer:"Each of the boys has a pen" },
+          { id:"e4", type:"mcq", question:"The plural of 'phenomenon' is:", options:["Phenomenons","Phenomenas","Phenomena","Phenomenes"], answer:"Phenomena" },
+          { id:"e5", type:"mcq", question:"Choose the word opposite in meaning to LOQUACIOUS:", options:["Talkative","Verbose","Taciturn","Garrulous"], answer:"Taciturn" },
+          { id:"e6", type:"mcq", question:"Identify the figure of speech: 'The wind whispered through the trees'", options:["Simile","Metaphor","Personification","Hyperbole"], answer:"Personification" },
+          { id:"e7", type:"mcq", question:"Choose the correct spelling:", options:["Accomodate","Accommodate","Acomodate","Acommodate"], answer:"Accommodate" },
+          { id:"e8", type:"mcq", question:"Fill in: She has been studying _____ morning.", options:["since","from","for","during"], answer:"since" },
+          { id:"e9", type:"saq", question:"What is the one-word synonym for 'very hungry'? (lowercase)", answer:"famished" },
+          { id:"e10", type:"saq", question:"Complete the proverb: 'A stitch in time saves ___' (write the number in words)", answer:"nine" },
+          { id:"e11", type:"mcq", question:"Which is the correct comparative form of 'good'?", options:["badder","gooder","better","best"], answer:"better" },
+          { id:"e12", type:"mcq", question:"Identify the part of speech of the word in caps: 'She RUNS daily.'", options:["Noun","Verb","Adjective","Adverb"], answer:"Verb" },
+          { id:"e13", type:"saq", question:"Give the antonym of 'ascend' (lowercase)", answer:"descend" },
+          { id:"e14", type:"mcq", question:"Choose the word that means 'to make a mistake':", options:["Erratic","Errand","Err","Erode"], answer:"Err" },
+          { id:"e15", type:"mcq", question:"Select the correctly punctuated sentence:", options:["Its a beautiful day.","It's a beautiful day.","Its' a beautiful day.","It is' a beautiful day."], answer:"It's a beautiful day." },
         ],
         "General Knowledge": [
-          { id: "g1", type: "mcq", question: "Nigeria gained independence in:", options: ["1960", "1963", "1914", "1956"], answer: "1960" },
-          { id: "g2", type: "mcq", question: "The current Governor of Lagos State (2026) is:", options: ["Babajide Sanwo-Olu", "Akinwunmi Ambode", "Obafemi Awolowo", "Bola Tinubu"], answer: "Babajide Sanwo-Olu" },
-          { id: "g3", type: "mcq", question: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], answer: "Mars" },
-          { id: "g4", type: "mcq", question: "The headquarters of ECOWAS is located in:", options: ["Accra", "Lagos", "Abuja", "Dakar"], answer: "Abuja" },
-          { id: "g5", type: "mcq", question: "Who was the first President of Nigeria?", options: ["Nnamdi Azikiwe", "Abubakar Tafawa Balewa", "Obafemi Awolowo", "Yakubu Gowon"], answer: "Nnamdi Azikiwe" },
-          { id: "g6", type: "mcq", question: "The process by which green plants make food is called:", options: ["Respiration", "Transpiration", "Photosynthesis", "Digestion"], answer: "Photosynthesis" },
-          { id: "g7", type: "mcq", question: "Which of these is NOT a primary colour of light?", options: ["Red", "Green", "Yellow", "Blue"], answer: "Yellow" },
-          { id: "g8", type: "mcq", question: "The United Nations was founded in:", options: ["1944", "1945", "1946", "1948"], answer: "1945" },
-          { id: "g9", type: "saq", question: "What is the capital city of Nigeria? (one word)", answer: "Abuja" },
-          { id: "g10", type: "saq", question: "How many states are in Nigeria? (write in digits)", answer: "36" },
+          { id:"g1", type:"mcq", question:"Nigeria gained independence in:", options:["1960","1963","1914","1956"], answer:"1960" },
+          { id:"g2", type:"mcq", question:"The current Governor of Lagos State (2026) is:", options:["Babajide Sanwo-Olu","Akinwunmi Ambode","Obafemi Awolowo","Bola Tinubu"], answer:"Babajide Sanwo-Olu" },
+          { id:"g3", type:"mcq", question:"Which planet is known as the Red Planet?", options:["Venus","Mars","Jupiter","Saturn"], answer:"Mars" },
+          { id:"g4", type:"mcq", question:"The headquarters of ECOWAS is located in:", options:["Accra","Lagos","Abuja","Dakar"], answer:"Abuja" },
+          { id:"g5", type:"mcq", question:"Who was the first President of Nigeria?", options:["Nnamdi Azikiwe","Abubakar Tafawa Balewa","Obafemi Awolowo","Yakubu Gowon"], answer:"Nnamdi Azikiwe" },
+          { id:"g6", type:"mcq", question:"The process by which green plants make food is called:", options:["Respiration","Transpiration","Photosynthesis","Digestion"], answer:"Photosynthesis" },
+          { id:"g7", type:"mcq", question:"Which of these is NOT a primary colour of light?", options:["Red","Green","Yellow","Blue"], answer:"Yellow" },
+          { id:"g8", type:"mcq", question:"The United Nations was founded in:", options:["1944","1945","1946","1948"], answer:"1945" },
+          { id:"g9", type:"saq", question:"What is the capital city of Nigeria? (one word)", answer:"Abuja" },
+          { id:"g10", type:"saq", question:"How many states are in Nigeria? (write in digits)", answer:"36" },
         ],
       };
 
-      // ─── UTILS ──────────────────────────────────────────────────
+      // ─── UTILS ─────────────────────────────────────────────────
       function shuffleArray(arr) {
         const a = [...arr];
         for (let i = a.length - 1; i > 0; i--) {
@@ -218,11 +202,16 @@
 
       const formatTime = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
-      // ─── STATE ──────────────────────────────────────────────────
+      // ─── STATE (FIX #1: internet added to checks) ──────────────
       const state = {
         stage: 'login',
         candidate: { name: '', email: '', phone: '', pin: '' },
-        checks: { internet: navigator.onLine, camera: false, mic: false, fullscreen: false },
+        checks: {
+          internet: navigator.onLine,   // ← FIX: immediate online detection
+          camera: false,
+          mic: false,
+          fullscreen: false,
+        },
         agreed: false,
         stream: null,
         questions: [],
@@ -239,28 +228,22 @@
         loginError: '',
         timerInterval: null,
         internetOnline: navigator.onLine,
-        // audio
+        // audio analysis
         audioContext: null,
         analyser: null,
         noiseCheckInterval: null,
         highNoiseSince: null,
-        // obstruction
+        // camera obstruction
         canvasCtx: null,
         obstructionCheckInterval: null,
         darkSince: null,
         brightSince: null,
-        // FaceMesh (classic)
+        // face mesh
         faceMesh: null,
-        faceRunning: false,
+        faceMeshRunning: false,
         faceMissingStart: null,
         yawStart: null,
         lastYawStatus: 'center',
-        faceStatusText: '⏳ initializing…',
-        faceStatusDot: 'loading',
-        faceInitDone: false,
-        faceInitError: null,
-        faceRetryTimer: null,
-        faceInitAttempts: 0,
       };
 
       const root = document.getElementById('root');
@@ -275,7 +258,7 @@
         }
       }
 
-      // ─── LOGIN ──────────────────────────────────────────────────
+      // ─── LOGIN (unchanged) ─────────────────────────────────────
       function renderLogin() {
         const div = document.createElement('div');
         div.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;';
@@ -283,7 +266,7 @@
           <div class="card" style="width:100%;max-width:480px;">
             <div style="text-align:center;margin-bottom:32px;">
               <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#5b21b6);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;">🎓</div>
-              <h1 style="margin:0;font-size:24px;font-weight:800;background:linear-gradient(135deg,#a78bfa,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">OIMI CBT Portal</h1>
+              <h1 style="margin:0;font-size:24px;font-weight:800;background:linear-gradient(135deg,#a78bfa,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">UNILAG CBT Portal</h1>
               <p style="margin:8px 0 0;color:#94a3b8;font-size:14px;">2026/2027 Post-UTME Screening Exercise</p>
             </div>
             <div style="display:flex;flex-direction:column;gap:16px;">
@@ -296,6 +279,7 @@
               <div id="loginError" style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;border-radius:8px;padding:10px 14px;color:#fca5a5;font-size:14px;display:${state.loginError?'block':'none'};">${state.loginError}</div>
               <button id="loginBtn" class="btn-purple" style="width:100%;">Proceed to Pre-Exam Check →</button>
             </div>
+            <p style="text-align:center;margin-top:16px;color:#64748b;font-size:12px;">Demo PIN: <strong style="color:#a78bfa;">1234</strong> · For official use only</p>
           </div>
         `;
         root.appendChild(div);
@@ -321,7 +305,7 @@
         render();
       }
 
-      // ─── PRE-CHECK ─────────────────────────────────────────────
+      // ─── PRE-CHECK (unchanged except fullscreen required) ──────
       function renderPrecheck() {
         const allChecksPass = state.checks.camera && state.checks.mic && state.checks.fullscreen && state.agreed;
         const div = document.createElement('div');
@@ -359,9 +343,9 @@
               I agree to the examination rules. I understand that tab switching, exiting fullscreen, or any form of malpractice will result in automatic submission.
             </label>
             <button id="startExamBtn" class="${allChecksPass ? 'btn-purple' : 'btn-disabled'}" style="width:100%;padding:14px;border-radius:10px;" ${allChecksPass ? '' : 'disabled'}>
-              ${allChecksPass ? 'START EXAM' : 'Complete all checks to continue'}
+              ${allChecksPass ? '🚀 START EXAM' : 'Complete all checks to continue'}
             </button>
-            <p style="text-align:center;margin-top:12px;color:#64748b;font-size:12px;">⏱ 30 min · 40 Questions </p>
+            <p style="text-align:center;margin-top:12px;color:#64748b;font-size:12px;">⏱ 30 min · 40 Questions · Proctored</p>
           </div>
         `;
         root.appendChild(div);
@@ -434,7 +418,6 @@
       window.addEventListener('online', () => { state.internetOnline = true; state.checks.internet = true; if(state.stage==='precheck') updatePrecheckStatus(); });
       window.addEventListener('offline', () => { state.internetOnline = false; state.checks.internet = false; if(state.stage==='precheck') updatePrecheckStatus(); });
 
-      // ─── START EXAM ────────────────────────────────────────────
       function startExam() {
         if (!(state.checks.camera && state.checks.mic && state.checks.fullscreen && state.agreed)) return;
         state.questions = buildExam();
@@ -445,261 +428,21 @@
         state.violations = 0;
         state.violationLog = [];
         state.submitted = false;
-        // Reset face state
-        state.faceInitDone = false;
-        state.faceInitError = null;
-        state.faceStatusText = '⏳ initializing…';
-        state.faceStatusDot = 'loading';
-        state.faceInitAttempts = 0;
-        if (state.faceRetryTimer) clearTimeout(state.faceRetryTimer);
         state.stage = 'exam';
         if (state.timerInterval) clearInterval(state.timerInterval);
         state.timerInterval = setInterval(timerTick, 1000);
         startNoiseMonitoring();
         startObstructionDetection();
         render();
-        // Start face mesh after a short delay
+        // Start face mesh after exam page is rendered
         setTimeout(() => {
           const liveVideo = document.getElementById('liveCamera');
           if (liveVideo && state.stream) {
-            if (liveVideo.readyState < 2) {
-              liveVideo.addEventListener('loadeddata', () => {
-                initFaceMesh(liveVideo);
-              }, { once: true });
-              liveVideo.play().catch(() => {});
-            } else {
-              initFaceMesh(liveVideo);
-            }
-          } else {
-            setTimeout(() => {
-              const v2 = document.getElementById('liveCamera');
-              if (v2 && state.stream) initFaceMesh(v2);
-            }, 1000);
+            initFaceMesh(liveVideo);
           }
-        }, 600);
+        }, 500);
       }
 
-      // ─── FACE MESH (CLASSIC) WITH ROBUST RETRY ──────────────
-      function initFaceMesh(videoElement, attempt = 0) {
-        if (state.submitted || state.stage !== 'exam') return;
-        if (state.faceInitDone) {
-          // Already working
-          return;
-        }
-        if (attempt > 0) {
-          state.faceStatusText = `⏳ retrying… (${attempt})`;
-          state.faceStatusDot = 'loading';
-          updateFaceStatusUI();
-        }
-        state.faceInitAttempts = attempt;
-
-        // Check if FaceMesh is loaded
-        if (typeof FaceMesh === 'undefined') {
-          if (attempt < 8) {
-            const delay = Math.min(1000 * (attempt + 1), 5000);
-            state.faceStatusText = `⏳ loading face AI… (${attempt+1}/8)`;
-            state.faceStatusDot = 'loading';
-            updateFaceStatusUI();
-            state.faceRetryTimer = setTimeout(() => {
-              const v = document.getElementById('liveCamera');
-              if (v && state.stream) initFaceMesh(v, attempt + 1);
-            }, delay);
-          } else {
-            state.faceInitError = 'FaceMesh library not loaded';
-            state.faceStatusText = '❌ face AI unavailable';
-            state.faceStatusDot = 'error';
-            updateFaceStatusUI();
-          }
-          return;
-        }
-
-        // Ensure video is ready
-        if (videoElement.readyState < 2) {
-          videoElement.addEventListener('loadeddata', () => {
-            initFaceMesh(videoElement, attempt);
-          }, { once: true });
-          return;
-        }
-
-        try {
-          // Close any existing
-          if (state.faceMesh) {
-            state.faceMesh.close();
-            state.faceMesh = null;
-          }
-          state.faceRunning = false;
-
-          const faceMesh = new FaceMesh({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1646425221/${file}`
-          });
-
-          faceMesh.setOptions({
-            maxNumFaces: 2,
-            refineLandmarks: false,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5,
-          });
-
-          let firstResult = false;
-
-          faceMesh.onResults((results) => {
-            if (state.submitted || state.stage !== 'exam') return;
-            if (!firstResult) {
-              firstResult = true;
-              state.faceInitDone = true;
-              state.faceInitError = null;
-              state.faceStatusText = '✅ face tracking active';
-              state.faceStatusDot = 'ok';
-              updateFaceStatusUI();
-            }
-            const faces = results.multiFaceLandmarks;
-            const faceCount = faces ? faces.length : 0;
-            const facePresent = faceCount > 0;
-            const multipleFaces = faceCount > 1;
-
-            const faceStatusEl = document.getElementById('faceStatus');
-            if (faceStatusEl) {
-              if (multipleFaces) faceStatusEl.innerHTML = '❌ (multiple)';
-              else if (!facePresent) faceStatusEl.innerHTML = '❌ (none)';
-              else {
-                const yaw = getYawFromLandmarks(faces[0]);
-                const icon = yaw < -15 ? '👈' : yaw > 15 ? '👉' : '✅';
-                faceStatusEl.innerHTML = icon + ' (head forward)';
-              }
-            }
-
-            if (multipleFaces) {
-              addViolation('Multiple faces detected');
-            }
-
-            if (!facePresent) {
-              if (!state.faceMissingStart) state.faceMissingStart = Date.now();
-              else if (Date.now() - state.faceMissingStart > 3000) {
-                addViolation('Face not visible for 3 seconds');
-                state.faceMissingStart = null;
-              }
-            } else {
-              state.faceMissingStart = null;
-            }
-
-            if (facePresent && faces[0]) {
-              const yaw = getYawFromLandmarks(faces[0]);
-              let currentStatus = 'center';
-              if (yaw < -15) currentStatus = 'left';
-              else if (yaw > 15) currentStatus = 'right';
-
-              if (currentStatus !== 'center') {
-                if (!state.yawStart) state.yawStart = Date.now();
-                else if (Date.now() - state.yawStart > 2000) {
-                  addViolation(`Head turned ${currentStatus} for 2 seconds`);
-                  state.yawStart = null;
-                }
-              } else {
-                state.yawStart = null;
-              }
-              state.lastYawStatus = currentStatus;
-            }
-          });
-
-          const sendFrame = async () => {
-            if (!state.faceRunning || state.submitted || state.stage !== 'exam') return;
-            try {
-              await faceMesh.send({ image: videoElement });
-            } catch (err) {
-              // ignore
-            }
-            if (state.faceRunning && !state.submitted) {
-              requestAnimationFrame(sendFrame);
-            }
-          };
-
-          state.faceMesh = faceMesh;
-          state.faceRunning = true;
-          sendFrame();
-
-          state.faceStatusText = '⏳ detecting face…';
-          state.faceStatusDot = 'loading';
-          updateFaceStatusUI();
-
-          // Timeout: if no results after 8s, retry
-          const timeoutId = setTimeout(() => {
-            if (!firstResult && state.faceRunning && !state.submitted) {
-              state.faceInitError = 'Face detection timed out';
-              state.faceStatusText = '⚠️ face AI slow – retrying…';
-              state.faceStatusDot = 'loading';
-              updateFaceStatusUI();
-              state.faceRunning = false;
-              faceMesh.close();
-              state.faceMesh = null;
-              state.faceRetryTimer = setTimeout(() => {
-                const v3 = document.getElementById('liveCamera');
-                if (v3 && state.stream) initFaceMesh(v3, state.faceInitAttempts + 1);
-              }, 2000);
-            }
-          }, 8000);
-
-          // Override onResults to clear timeout on first success
-          const origOnResults = faceMesh.onResults;
-          faceMesh.onResults = (results) => {
-            if (!firstResult) {
-              firstResult = true;
-              clearTimeout(timeoutId);
-              state.faceInitDone = true;
-              state.faceInitError = null;
-              state.faceStatusText = '✅ face tracking active';
-              state.faceStatusDot = 'ok';
-              updateFaceStatusUI();
-            }
-            origOnResults(results);
-          };
-
-        } catch (err) {
-          console.warn('FaceMesh init error:', err);
-          state.faceInitError = err.message || 'unknown error';
-          state.faceStatusText = '⚠️ face init error – retrying…';
-          state.faceStatusDot = 'error';
-          updateFaceStatusUI();
-          if (attempt < 6) {
-            const delay = Math.min(1500 * (attempt + 1), 5000);
-            state.faceRetryTimer = setTimeout(() => {
-              const v4 = document.getElementById('liveCamera');
-              if (v4 && state.stream) initFaceMesh(v4, attempt + 1);
-            }, delay);
-          } else {
-            state.faceStatusText = '❌ face AI unavailable';
-            state.faceStatusDot = 'error';
-            updateFaceStatusUI();
-          }
-        }
-      }
-
-      function getYawFromLandmarks(landmarks) {
-        const leftEye = landmarks[33];
-        const rightEye = landmarks[263];
-        const noseTip = landmarks[1];
-        if (!leftEye || !rightEye || !noseTip) return 0;
-        const eyeMidX = (leftEye.x + rightEye.x) / 2;
-        const diff = noseTip.x - eyeMidX;
-        return diff * 100;
-      }
-
-      function updateFaceStatusUI() {
-        const el = document.getElementById('faceStatus');
-        if (el) {
-          const dot = document.querySelector('.face-status-dot');
-          if (dot) {
-            dot.className = `face-status-dot ${state.faceStatusDot}`;
-          }
-          el.innerHTML = `${state.faceStatusText}`;
-        }
-        // Also update any other display
-        const proctorEl = document.querySelector('#proctorPanel .face-status-text');
-        if (proctorEl) {
-          proctorEl.textContent = state.faceStatusText;
-        }
-      }
-
-      // ─── TIMER ──────────────────────────────────────────────────
       function timerTick() {
         if (state.stage !== 'exam' || state.submitted) return;
         state.timeLeft--;
@@ -711,7 +454,7 @@
         if (state.timeLeft <= 0) submitExam();
       }
 
-      // ─── AUDIO NOISE ───────────────────────────────────────────
+      // ─── AUDIO NOISE DETECTION ──────────────────────────────────
       function startNoiseMonitoring() {
         if (!state.stream) return;
         const audioTrack = state.stream.getAudioTracks()[0];
@@ -759,7 +502,7 @@
         if (label) label.textContent = level + '%';
       }
 
-      // ─── CAMERA OBSTRUCTION ────────────────────────────────────
+      // ─── CAMERA OBSTRUCTION DETECTION ───────────────────────────
       function startObstructionDetection() {
         if (!state.stream) return;
         const video = document.getElementById('liveCamera');
@@ -771,41 +514,146 @@
 
         state.obstructionCheckInterval = setInterval(() => {
           if (state.stage !== 'exam' || state.submitted) return;
-          try {
-            ctx.drawImage(video, 0, 0, 160, 120);
-            const frame = ctx.getImageData(0, 0, 160, 120);
-            let total = 0;
-            for (let i = 0; i < frame.data.length; i += 4) {
-              total += (frame.data[i] + frame.data[i+1] + frame.data[i+2]) / 3;
+          ctx.drawImage(video, 0, 0, 160, 120);
+          const frame = ctx.getImageData(0, 0, 160, 120);
+          let total = 0;
+          for (let i = 0; i < frame.data.length; i += 4) {
+            total += (frame.data[i] + frame.data[i+1] + frame.data[i+2]) / 3;
+          }
+          const avgBrightness = total / (frame.data.length / 4);
+
+          const dark = avgBrightness < 30;
+          const bright = avgBrightness > 240;
+
+          if (dark) {
+            if (!state.darkSince) state.darkSince = Date.now();
+            else if (Date.now() - state.darkSince > 4000) {
+              addViolation('Camera obstructed (too dark)');
+              state.darkSince = null;
             }
-            const avgBrightness = total / (frame.data.length / 4);
+          } else { state.darkSince = null; }
 
-            const dark = avgBrightness < 30;
-            const bright = avgBrightness > 240;
+          if (bright) {
+            if (!state.brightSince) state.brightSince = Date.now();
+            else if (Date.now() - state.brightSince > 4000) {
+              addViolation('Camera obstructed (too bright)');
+              state.brightSince = null;
+            }
+          } else { state.brightSince = null; }
 
-            if (dark) {
-              if (!state.darkSince) state.darkSince = Date.now();
-              else if (Date.now() - state.darkSince > 4000) {
-                addViolation('Camera obstructed (too dark)');
-                state.darkSince = null;
-              }
-            } else { state.darkSince = null; }
-
-            if (bright) {
-              if (!state.brightSince) state.brightSince = Date.now();
-              else if (Date.now() - state.brightSince > 4000) {
-                addViolation('Camera obstructed (too bright)');
-                state.brightSince = null;
-              }
-            } else { state.brightSince = null; }
-
-            const brightnessEl = document.getElementById('brightnessVal');
-            if (brightnessEl) brightnessEl.textContent = Math.round(avgBrightness);
-          } catch (e) {}
+          const brightnessEl = document.getElementById('brightnessVal');
+          if (brightnessEl) brightnessEl.textContent = Math.round(avgBrightness);
         }, 5000);
       }
 
-      // ─── VIOLATIONS ────────────────────────────────────────────
+      // ─── FACE MESH (HEAD TURN, MULTIPLE FACES, FACE MISSING) ──
+      function initFaceMesh(videoElement) {
+        if (state.faceMeshRunning) return;
+        // Make sure MediaPipe is loaded
+        if (typeof FaceMesh === 'undefined') {
+          console.warn('MediaPipe FaceMesh not loaded yet, retrying...');
+          setTimeout(() => initFaceMesh(videoElement), 1000);
+          return;
+        }
+
+        const faceMesh = new FaceMesh({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        });
+
+        faceMesh.setOptions({
+          maxNumFaces: 2,          // detect up to 2 faces
+          refineLandmarks: false,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        });
+
+        faceMesh.onResults((results) => {
+          if (state.submitted || state.stage !== 'exam') return;
+
+          const faces = results.multiFaceLandmarks;
+          const faceCount = faces ? faces.length : 0;
+          const facePresent = faceCount > 0;
+          const multipleFaces = faceCount > 1;
+
+          // Update proctor panel face status
+          const faceStatusEl = document.getElementById('faceStatus');
+          if (faceStatusEl) {
+            if (multipleFaces) faceStatusEl.innerHTML = '❌ (multiple)';
+            else if (!facePresent) faceStatusEl.innerHTML = '❌ (none)';
+            else {
+              const yaw = getYaw(faces[0]);
+              const icon = yaw < -15 ? '👈' : yaw > 15 ? '👉' : '✅';
+              faceStatusEl.innerHTML = icon + ' (head forward)';
+            }
+          }
+
+          // --- Check multiple faces ---
+          if (multipleFaces) {
+            addViolation('Multiple faces detected');
+            return; // Skip other checks
+          }
+
+          // --- Check face missing ---
+          if (!facePresent) {
+            if (!state.faceMissingStart) state.faceMissingStart = Date.now();
+            else if (Date.now() - state.faceMissingStart > 3000) {
+              addViolation('Face not visible for 3 seconds');
+              state.faceMissingStart = null; // reset to avoid repeated flags
+            }
+          } else {
+            state.faceMissingStart = null;
+          }
+
+          // --- Head turn detection ---
+          if (facePresent && faces[0]) {
+            const yaw = getYaw(faces[0]);
+            let currentStatus = 'center';
+            if (yaw < -15) currentStatus = 'left';
+            else if (yaw > 15) currentStatus = 'right';
+
+            if (currentStatus !== 'center') {
+              if (!state.yawStart) state.yawStart = Date.now();
+              else if (Date.now() - state.yawStart > 2000) {
+                addViolation(`Head turned ${currentStatus} for 2 seconds`);
+                state.yawStart = null;
+              }
+            } else {
+              state.yawStart = null;
+            }
+            state.lastYawStatus = currentStatus;
+          }
+        });
+
+        // Feed video frames to faceMesh
+        const sendFrame = async () => {
+          if (!state.faceMeshRunning || state.submitted) return;
+          await faceMesh.send({ image: videoElement });
+          requestAnimationFrame(sendFrame);
+        };
+
+        state.faceMesh = faceMesh;
+        state.faceMeshRunning = true;
+        sendFrame();
+      }
+
+      // Simple yaw estimation using eye corners and nose tip
+      function getYaw(landmarks) {
+        // Indices: left eye outer (33), right eye outer (263), nose tip (1)
+        const leftEye = landmarks[33];
+        const rightEye = landmarks[263];
+        const noseTip = landmarks[1];
+        if (!leftEye || !rightEye || !noseTip) return 0;
+
+        // Calculate the midpoint between the eyes
+        const eyeMidX = (leftEye.x + rightEye.x) / 2;
+        // Compare nose tip x position to eye midpoint
+        const diff = noseTip.x - eyeMidX;
+        // Convert to approximate degrees (arbitrary scale)
+        const yaw = diff * 100; // scaling factor
+        return yaw;
+      }
+
+      // ─── VIOLATION HANDLER (with log) ──────────────────────────
       function addViolation(msg) {
         state.violations++;
         const time = new Date().toLocaleTimeString('en-NG');
@@ -837,7 +685,7 @@
         });
       }
 
-      // ─── EXAM PAGE ─────────────────────────────────────────────
+      // ─── EXAM PAGE (with proctor panel & face status) ──────────
       function renderExam() {
         if (!state.questions.length) return;
         const q = state.questions[state.current];
@@ -874,10 +722,7 @@
                   <div class="noise-bar"><div id="noiseFill" class="noise-fill" style="width:0%"></div></div>
                 </div>
                 <div>💡 Brightness: <span id="brightnessVal">--</span></div>
-                <div>
-                  <span class="face-status-dot ${state.faceStatusDot}"></span>
-                  <span id="faceStatus" class="face-status-text">${state.faceStatusText}</span>
-                </div>
+                <div>😶 Face: <span id="faceStatus">⏳</span></div>
                 <div style="margin-top:6px; font-size:10px; color:#ef4444;">Violations: <span class="violation-badge">${state.violations}/3</span></div>
               </div>
             </div>
@@ -971,39 +816,11 @@
 
         if (state.stream) {
           const liveVideo = document.getElementById('liveCamera');
-          if (liveVideo) {
-            liveVideo.srcObject = state.stream;
-            liveVideo.play().catch(() => {});
-          }
+          if (liveVideo) liveVideo.srcObject = state.stream;
         }
 
-        // Re-attempt face mesh if not initialized
-        if (state.stream && !state.submitted && !state.faceInitDone) {
-          const newVideo = document.getElementById('liveCamera');
-          if (newVideo && !state.faceInitError) {
-            if (state.faceRetryTimer) clearTimeout(state.faceRetryTimer);
-            setTimeout(() => {
-              const v = document.getElementById('liveCamera');
-              if (v && state.stream && !state.faceInitDone) {
-                initFaceMesh(v, state.faceInitAttempts);
-              }
-            }, 500);
-          } else if (newVideo && state.faceInitError) {
-            if (!state.faceRetryTimer) {
-              state.faceRetryTimer = setTimeout(() => {
-                const v = document.getElementById('liveCamera');
-                if (v && state.stream) {
-                  state.faceInitError = null;
-                  initFaceMesh(v, 0);
-                }
-                state.faceRetryTimer = null;
-              }, 3000);
-            }
-          }
-        }
-
+        // Update proctor panel statuses
         updateProctorPanel();
-        updateFaceStatusUI();
       }
 
       function updateProctorPanel() {
@@ -1015,7 +832,7 @@
         if (netEl) netEl.textContent = state.internetOnline ? '🟢' : '🔴';
       }
 
-      // ─── CALCULATOR ────────────────────────────────────────────
+      // ─── CALCULATOR (operators unified) ─────────────────────────
       function openCalculator() {
         if (state.showCalc) return;
         state.showCalc = true;
@@ -1086,15 +903,14 @@
         });
       }
 
-      // ─── SUBMIT ─────────────────────────────────────────────────
+      // ─── SUBMIT & EMAIL (with violation log) ────────────────────
       function submitExam() {
         if (state.submitted) return;
         state.submitted = true;
         clearInterval(state.timerInterval);
         clearInterval(state.noiseCheckInterval);
         clearInterval(state.obstructionCheckInterval);
-        state.faceRunning = false;
-        if (state.faceMesh) { state.faceMesh.close(); state.faceMesh = null; }
+        state.faceMeshRunning = false;
         if (state.stream) state.stream.getTracks().forEach(t => t.stop());
 
         const results = calcResults();
@@ -1120,11 +936,9 @@
           to_email: ADMIN_EMAIL,
         };
 
-        if (window.emailjs) {
-          emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-            .then(() => console.log('✅ Result emailed'))
-            .catch(err => console.warn('Email error:', err));
-        }
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+          .then(() => console.log('✅ Result emailed'))
+          .catch(err => console.warn('Email error:', err));
 
         state.stage = 'result';
         render();
@@ -1146,7 +960,7 @@
         };
       }
 
-      // ─── RESULT ──────────────────────────────────────────────────
+      // ─── RESULT PAGE (unchanged) ────────────────────────────────
       function renderResult() {
         const { score, total, pct, unanswered, wrong } = calcResults();
         const timeUsedSec = 30*60 - state.timeLeft;
@@ -1182,22 +996,17 @@
         document.getElementById('restartBtn').addEventListener('click', () => {
           clearInterval(state.noiseCheckInterval);
           clearInterval(state.obstructionCheckInterval);
-          state.faceRunning = false;
-          if (state.faceMesh) { state.faceMesh.close(); state.faceMesh = null; }
+          state.faceMeshRunning = false;
           if (state.stream) { state.stream.getTracks().forEach(t=>t.stop()); state.stream = null; }
           state.stage = 'login';
           state.candidate = { name:'', email:'', phone:'', pin:'' };
           state.agreed = false;
-          state.checks = { internet: navigator.onLine, camera:false, mic:false, fullscreen:false };
-          state.faceInitDone = false;
-          state.faceInitError = null;
-          state.faceStatusText = '⏳ initializing…';
-          state.faceStatusDot = 'loading';
+          state.checks = { camera:false, mic:false, fullscreen:false };
           render();
         });
       }
 
-      // ─── ANTI-CHEAT ────────────────────────────────────────────
+      // ─── ANTI-CHEAT (same as before) ────────────────────────────
       window.addEventListener('blur', () => {
         if (state.stage === 'exam' && !state.submitted) addViolation('Left exam window');
       });
@@ -1214,13 +1023,8 @@
       // ─── INIT ───────────────────────────────────────────────────
       render();
 
-      // Periodic UI updates
-      setInterval(() => {
-        if (state.stage === 'exam' && !state.submitted) {
-          updateFaceStatusUI();
-          updateProctorPanel();
-        }
-      }, 2000);
+      // Fix #2 (recommended): ensure internet status is set after initial render
+      state.checks.internet = navigator.onLine;
     })();
   </script>
 </body>
