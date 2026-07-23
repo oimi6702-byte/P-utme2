@@ -130,8 +130,9 @@
   <!-- EmailJS -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-  <!-- MediaPipe Tasks Vision (new, more reliable) -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm/vision_bundle.js" defer></script>
+  <!-- MediaPipe Face Mesh (classic, more stable) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1646425221/face_mesh.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029078/camera_utils.js" defer></script>
 
   <script>
     (() => {
@@ -248,8 +249,8 @@
         obstructionCheckInterval: null,
         darkSince: null,
         brightSince: null,
-        // FaceLandmarker (new)
-        faceLandmarker: null,
+        // FaceMesh (classic)
+        faceMesh: null,
         faceRunning: false,
         faceMissingStart: null,
         yawStart: null,
@@ -457,52 +458,54 @@
         startNoiseMonitoring();
         startObstructionDetection();
         render();
-        // Start face landmarker after DOM ready and video playing
+        // Start face mesh after a short delay
         setTimeout(() => {
           const liveVideo = document.getElementById('liveCamera');
           if (liveVideo && state.stream) {
-            // Ensure video is playing
             if (liveVideo.readyState < 2) {
               liveVideo.addEventListener('loadeddata', () => {
-                initFaceLandmarker(liveVideo);
+                initFaceMesh(liveVideo);
               }, { once: true });
               liveVideo.play().catch(() => {});
             } else {
-              initFaceLandmarker(liveVideo);
+              initFaceMesh(liveVideo);
             }
           } else {
-            // Retry if video not ready
             setTimeout(() => {
               const v2 = document.getElementById('liveCamera');
-              if (v2 && state.stream) initFaceLandmarker(v2);
+              if (v2 && state.stream) initFaceMesh(v2);
             }, 1000);
           }
         }, 600);
       }
 
-      // ─── FACE LANDMARKER (NEW) ────────────────────────────────
-      function initFaceLandmarker(videoElement, attempt = 0) {
+      // ─── FACE MESH (CLASSIC) WITH ROBUST RETRY ──────────────
+      function initFaceMesh(videoElement, attempt = 0) {
         if (state.submitted || state.stage !== 'exam') return;
-        if (state.faceInitDone) return;
+        if (state.faceInitDone) {
+          // Already working
+          return;
+        }
         if (attempt > 0) {
-          state.faceStatusText = `⏳ loading face AI… (${attempt+1})`;
+          state.faceStatusText = `⏳ retrying… (${attempt})`;
           state.faceStatusDot = 'loading';
           updateFaceStatusUI();
         }
         state.faceInitAttempts = attempt;
 
-        // Check if the Vision library is loaded
-        if (typeof window.FaceLandmarker === 'undefined' || typeof window.FilesetResolver === 'undefined') {
-          if (attempt < 6) {
+        // Check if FaceMesh is loaded
+        if (typeof FaceMesh === 'undefined') {
+          if (attempt < 8) {
             const delay = Math.min(1000 * (attempt + 1), 5000);
-            state.faceRetryTimer = setTimeout(() => {
-              initFaceLandmarker(videoElement, attempt + 1);
-            }, delay);
-            state.faceStatusText = `⏳ loading face AI… (${attempt+1}/6)`;
+            state.faceStatusText = `⏳ loading face AI… (${attempt+1}/8)`;
             state.faceStatusDot = 'loading';
             updateFaceStatusUI();
+            state.faceRetryTimer = setTimeout(() => {
+              const v = document.getElementById('liveCamera');
+              if (v && state.stream) initFaceMesh(v, attempt + 1);
+            }, delay);
           } else {
-            state.faceInitError = 'FaceLandmarker library not loaded';
+            state.faceInitError = 'FaceMesh library not loaded';
             state.faceStatusText = '❌ face AI unavailable';
             state.faceStatusDot = 'error';
             updateFaceStatusUI();
@@ -513,156 +516,154 @@
         // Ensure video is ready
         if (videoElement.readyState < 2) {
           videoElement.addEventListener('loadeddata', () => {
-            initFaceLandmarker(videoElement, attempt);
+            initFaceMesh(videoElement, attempt);
           }, { once: true });
           return;
         }
 
         try {
-          // Create the FaceLandmarker
-          const vision = window;
-          const filesetResolver = vision.FilesetResolver.forVisionTasks(
-            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm'
-          );
-          const faceLandmarker = await vision.FaceLandmarker.createFromOptions(filesetResolver, {
-            baseOptions: {
-              modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-              delegate: 'CPU' // Use CPU for wider compatibility
-            },
-            runningMode: 'VIDEO',
-            numFaces: 2,
-            minFaceDetectionConfidence: 0.5,
-            minFacePresenceConfidence: 0.5,
+          // Close any existing
+          if (state.faceMesh) {
+            state.faceMesh.close();
+            state.faceMesh = null;
+          }
+          state.faceRunning = false;
+
+          const faceMesh = new FaceMesh({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1646425221/${file}`
+          });
+
+          faceMesh.setOptions({
+            maxNumFaces: 2,
+            refineLandmarks: false,
+            minDetectionConfidence: 0.5,
             minTrackingConfidence: 0.5,
           });
 
-          state.faceLandmarker = faceLandmarker;
+          let firstResult = false;
+
+          faceMesh.onResults((results) => {
+            if (state.submitted || state.stage !== 'exam') return;
+            if (!firstResult) {
+              firstResult = true;
+              state.faceInitDone = true;
+              state.faceInitError = null;
+              state.faceStatusText = '✅ face tracking active';
+              state.faceStatusDot = 'ok';
+              updateFaceStatusUI();
+            }
+            const faces = results.multiFaceLandmarks;
+            const faceCount = faces ? faces.length : 0;
+            const facePresent = faceCount > 0;
+            const multipleFaces = faceCount > 1;
+
+            const faceStatusEl = document.getElementById('faceStatus');
+            if (faceStatusEl) {
+              if (multipleFaces) faceStatusEl.innerHTML = '❌ (multiple)';
+              else if (!facePresent) faceStatusEl.innerHTML = '❌ (none)';
+              else {
+                const yaw = getYawFromLandmarks(faces[0]);
+                const icon = yaw < -15 ? '👈' : yaw > 15 ? '👉' : '✅';
+                faceStatusEl.innerHTML = icon + ' (head forward)';
+              }
+            }
+
+            if (multipleFaces) {
+              addViolation('Multiple faces detected');
+            }
+
+            if (!facePresent) {
+              if (!state.faceMissingStart) state.faceMissingStart = Date.now();
+              else if (Date.now() - state.faceMissingStart > 3000) {
+                addViolation('Face not visible for 3 seconds');
+                state.faceMissingStart = null;
+              }
+            } else {
+              state.faceMissingStart = null;
+            }
+
+            if (facePresent && faces[0]) {
+              const yaw = getYawFromLandmarks(faces[0]);
+              let currentStatus = 'center';
+              if (yaw < -15) currentStatus = 'left';
+              else if (yaw > 15) currentStatus = 'right';
+
+              if (currentStatus !== 'center') {
+                if (!state.yawStart) state.yawStart = Date.now();
+                else if (Date.now() - state.yawStart > 2000) {
+                  addViolation(`Head turned ${currentStatus} for 2 seconds`);
+                  state.yawStart = null;
+                }
+              } else {
+                state.yawStart = null;
+              }
+              state.lastYawStatus = currentStatus;
+            }
+          });
+
+          const sendFrame = async () => {
+            if (!state.faceRunning || state.submitted || state.stage !== 'exam') return;
+            try {
+              await faceMesh.send({ image: videoElement });
+            } catch (err) {
+              // ignore
+            }
+            if (state.faceRunning && !state.submitted) {
+              requestAnimationFrame(sendFrame);
+            }
+          };
+
+          state.faceMesh = faceMesh;
           state.faceRunning = true;
-          state.faceInitDone = false; // will be set true on first detection
+          sendFrame();
+
           state.faceStatusText = '⏳ detecting face…';
           state.faceStatusDot = 'loading';
           updateFaceStatusUI();
 
-          // Start detection loop
-          let firstResult = false;
-          const detectLoop = async () => {
-            if (!state.faceRunning || state.submitted || state.stage !== 'exam') return;
-            try {
-              const result = await faceLandmarker.detectForVideo(videoElement, performance.now());
-              if (!firstResult) {
-                firstResult = true;
-                state.faceInitDone = true;
-                state.faceInitError = null;
-                state.faceStatusText = '✅ face tracking active';
-                state.faceStatusDot = 'ok';
-                updateFaceStatusUI();
-              }
-              // Process result
-              const faces = result.faceLandmarks || [];
-              const faceCount = faces.length;
-              const facePresent = faceCount > 0;
-              const multipleFaces = faceCount > 1;
-
-              const faceStatusEl = document.getElementById('faceStatus');
-              if (faceStatusEl) {
-                if (multipleFaces) faceStatusEl.innerHTML = '❌ (multiple)';
-                else if (!facePresent) faceStatusEl.innerHTML = '❌ (none)';
-                else {
-                  // Estimate yaw from landmarks: use nose tip and eyes
-                  const landmarks = faces[0];
-                  const leftEye = landmarks[33];
-                  const rightEye = landmarks[263];
-                  const noseTip = landmarks[1];
-                  if (leftEye && rightEye && noseTip) {
-                    const eyeMidX = (leftEye.x + rightEye.x) / 2;
-                    const diff = noseTip.x - eyeMidX;
-                    const yaw = diff * 100;
-                    const icon = yaw < -15 ? '👈' : yaw > 15 ? '👉' : '✅';
-                    faceStatusEl.innerHTML = icon + ' (head forward)';
-                  } else {
-                    faceStatusEl.innerHTML = '✅ (face)';
-                  }
-                }
-              }
-
-              if (multipleFaces) {
-                addViolation('Multiple faces detected');
-                // Still continue
-              }
-
-              if (!facePresent) {
-                if (!state.faceMissingStart) state.faceMissingStart = Date.now();
-                else if (Date.now() - state.faceMissingStart > 3000) {
-                  addViolation('Face not visible for 3 seconds');
-                  state.faceMissingStart = null;
-                }
-              } else {
-                state.faceMissingStart = null;
-              }
-
-              if (facePresent && faces[0]) {
-                const landmarks = faces[0];
-                const leftEye = landmarks[33];
-                const rightEye = landmarks[263];
-                const noseTip = landmarks[1];
-                if (leftEye && rightEye && noseTip) {
-                  const eyeMidX = (leftEye.x + rightEye.x) / 2;
-                  const diff = noseTip.x - eyeMidX;
-                  const yaw = diff * 100;
-                  let currentStatus = 'center';
-                  if (yaw < -15) currentStatus = 'left';
-                  else if (yaw > 15) currentStatus = 'right';
-
-                  if (currentStatus !== 'center') {
-                    if (!state.yawStart) state.yawStart = Date.now();
-                    else if (Date.now() - state.yawStart > 2000) {
-                      addViolation(`Head turned ${currentStatus} for 2 seconds`);
-                      state.yawStart = null;
-                    }
-                  } else {
-                    state.yawStart = null;
-                  }
-                  state.lastYawStatus = currentStatus;
-                }
-              }
-            } catch (err) {
-              console.debug('Face detection error:', err);
-            }
-            // Continue loop
-            requestAnimationFrame(detectLoop);
-          };
-
-          detectLoop();
-
-          // Set a timeout to detect if no results after 8 seconds
-          setTimeout(() => {
+          // Timeout: if no results after 8s, retry
+          const timeoutId = setTimeout(() => {
             if (!firstResult && state.faceRunning && !state.submitted) {
               state.faceInitError = 'Face detection timed out';
               state.faceStatusText = '⚠️ face AI slow – retrying…';
               state.faceStatusDot = 'loading';
               updateFaceStatusUI();
-              // Retry after a delay
               state.faceRunning = false;
-              faceLandmarker.close();
-              state.faceLandmarker = null;
+              faceMesh.close();
+              state.faceMesh = null;
               state.faceRetryTimer = setTimeout(() => {
                 const v3 = document.getElementById('liveCamera');
-                if (v3 && state.stream) initFaceLandmarker(v3, state.faceInitAttempts + 1);
+                if (v3 && state.stream) initFaceMesh(v3, state.faceInitAttempts + 1);
               }, 2000);
             }
           }, 8000);
 
+          // Override onResults to clear timeout on first success
+          const origOnResults = faceMesh.onResults;
+          faceMesh.onResults = (results) => {
+            if (!firstResult) {
+              firstResult = true;
+              clearTimeout(timeoutId);
+              state.faceInitDone = true;
+              state.faceInitError = null;
+              state.faceStatusText = '✅ face tracking active';
+              state.faceStatusDot = 'ok';
+              updateFaceStatusUI();
+            }
+            origOnResults(results);
+          };
+
         } catch (err) {
-          console.warn('FaceLandmarker init error:', err);
+          console.warn('FaceMesh init error:', err);
           state.faceInitError = err.message || 'unknown error';
           state.faceStatusText = '⚠️ face init error – retrying…';
           state.faceStatusDot = 'error';
           updateFaceStatusUI();
-          if (attempt < 4) {
+          if (attempt < 6) {
             const delay = Math.min(1500 * (attempt + 1), 5000);
             state.faceRetryTimer = setTimeout(() => {
               const v4 = document.getElementById('liveCamera');
-              if (v4 && state.stream) initFaceLandmarker(v4, attempt + 1);
+              if (v4 && state.stream) initFaceMesh(v4, attempt + 1);
             }, delay);
           } else {
             state.faceStatusText = '❌ face AI unavailable';
@@ -670,6 +671,16 @@
             updateFaceStatusUI();
           }
         }
+      }
+
+      function getYawFromLandmarks(landmarks) {
+        const leftEye = landmarks[33];
+        const rightEye = landmarks[263];
+        const noseTip = landmarks[1];
+        if (!leftEye || !rightEye || !noseTip) return 0;
+        const eyeMidX = (leftEye.x + rightEye.x) / 2;
+        const diff = noseTip.x - eyeMidX;
+        return diff * 100;
       }
 
       function updateFaceStatusUI() {
@@ -966,7 +977,7 @@
           }
         }
 
-        // Re-attempt face landmarker if not initialized
+        // Re-attempt face mesh if not initialized
         if (state.stream && !state.submitted && !state.faceInitDone) {
           const newVideo = document.getElementById('liveCamera');
           if (newVideo && !state.faceInitError) {
@@ -974,7 +985,7 @@
             setTimeout(() => {
               const v = document.getElementById('liveCamera');
               if (v && state.stream && !state.faceInitDone) {
-                initFaceLandmarker(v, state.faceInitAttempts);
+                initFaceMesh(v, state.faceInitAttempts);
               }
             }, 500);
           } else if (newVideo && state.faceInitError) {
@@ -983,7 +994,7 @@
                 const v = document.getElementById('liveCamera');
                 if (v && state.stream) {
                   state.faceInitError = null;
-                  initFaceLandmarker(v, 0);
+                  initFaceMesh(v, 0);
                 }
                 state.faceRetryTimer = null;
               }, 3000);
@@ -1083,7 +1094,7 @@
         clearInterval(state.noiseCheckInterval);
         clearInterval(state.obstructionCheckInterval);
         state.faceRunning = false;
-        if (state.faceLandmarker) { state.faceLandmarker.close(); state.faceLandmarker = null; }
+        if (state.faceMesh) { state.faceMesh.close(); state.faceMesh = null; }
         if (state.stream) state.stream.getTracks().forEach(t => t.stop());
 
         const results = calcResults();
@@ -1172,7 +1183,7 @@
           clearInterval(state.noiseCheckInterval);
           clearInterval(state.obstructionCheckInterval);
           state.faceRunning = false;
-          if (state.faceLandmarker) { state.faceLandmarker.close(); state.faceLandmarker = null; }
+          if (state.faceMesh) { state.faceMesh.close(); state.faceMesh = null; }
           if (state.stream) { state.stream.getTracks().forEach(t=>t.stop()); state.stream = null; }
           state.stage = 'login';
           state.candidate = { name:'', email:'', phone:'', pin:'' };
