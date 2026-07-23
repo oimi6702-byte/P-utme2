@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>UNILAG CBT Portal – Vanilla</title>
+  <title>UNILAG CBT Portal – Proctored (with Face Tracking)</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -95,6 +95,17 @@
     .calc-btn { padding: 10px 0; border-radius: 8px; font-size: 15px; font-weight: 600; background: #2d2d4e; color: #fff; }
     .calc-op { background: #7c3aed; }
     .calc-clear { background: #dc2626; }
+    .proctor-panel {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+    }
+    .noise-bar {
+      width: 60px; height: 8px; background: #333; border-radius: 4px; overflow: hidden; display: inline-block;
+    }
+    .noise-fill { height: 100%; background: #f59e0b; width: 0%; transition: width 0.1s; }
     @media (max-width: 768px) {
       .exam-layout { flex-direction: column; }
       .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; }
@@ -107,15 +118,18 @@
   <!-- EmailJS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
+  <!-- MediaPipe Face Mesh (loaded on demand) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" defer></script>
+
   <script>
     (() => {
-      // ⚠️ YOUR EMAILJS CREDENTIALS (already set)
-      const EMAILJS_USER_ID = "mt3HJUIfu1kcIMjGb";        // your public key
-      const EMAILJS_SERVICE_ID = "service_rrx6495";       // your Gmail service
-      const EMAILJS_TEMPLATE_ID = "template_gf9ilrc";     // your template ID
-      const ADMIN_EMAIL = "oimi6702@gmail.com";           // where results go
+      // ⚠️ YOUR EMAILJS CREDENTIALS – in production, move these to a backend
+      const EMAILJS_USER_ID = "mt3HJUIfu1kcIMjGb";
+      const EMAILJS_SERVICE_ID = "service_rrx6495";
+      const EMAILJS_TEMPLATE_ID = "template_gf9ilrc";
+      const ADMIN_EMAIL = "oimi6702@gmail.com";
 
-      // Initialize EmailJS
       emailjs.init(EMAILJS_USER_ID);
 
       // ─── QUESTION BANK: 15 Math, 15 English, 10 General Knowledge ──
@@ -181,7 +195,6 @@
       function buildExam() {
         const allQ = [];
         for (const [subj, qs] of Object.entries(QUESTION_BANK)) {
-          // USE ALL QUESTIONS (no slicing)
           qs.forEach(q => allQ.push({ ...q, subject: subj }));
         }
         return shuffleArray(allQ);
@@ -189,7 +202,7 @@
 
       const formatTime = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
-      // ─── STATE (NIN removed) ──────────────────────────────────
+      // ─── STATE ─────────────────────────────────────────────────
       const state = {
         stage: 'login',
         candidate: { name: '', email: '', phone: '', pin: '' },
@@ -202,6 +215,7 @@
         flagged: new Set(),
         timeLeft: 30 * 60,
         violations: 0,
+        violationLog: [],
         showCalc: false,
         showWarning: false,
         warningMsg: '',
@@ -209,6 +223,22 @@
         loginError: '',
         timerInterval: null,
         internetOnline: navigator.onLine,
+        // audio analysis
+        audioContext: null,
+        analyser: null,
+        noiseCheckInterval: null,
+        highNoiseSince: null,
+        // camera obstruction
+        canvasCtx: null,
+        obstructionCheckInterval: null,
+        darkSince: null,
+        brightSince: null,
+        // face mesh
+        faceMesh: null,
+        faceMeshRunning: false,
+        faceMissingStart: null,
+        yawStart: null,
+        lastYawStatus: 'center', // 'left', 'right', 'center'
       };
 
       const root = document.getElementById('root');
@@ -223,7 +253,7 @@
         }
       }
 
-      // ─── LOGIN (NIN field removed) ─────────────────────────────
+      // ─── LOGIN (unchanged) ─────────────────────────────────────
       function renderLogin() {
         const div = document.createElement('div');
         div.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;';
@@ -270,8 +300,9 @@
         render();
       }
 
-      // ─── PRE-CHECK ──────────────────────────────────────────────
+      // ─── PRE-CHECK (unchanged except fullscreen required) ──────
       function renderPrecheck() {
+        const allChecksPass = state.checks.camera && state.checks.mic && state.checks.fullscreen && state.agreed;
         const div = document.createElement('div');
         div.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;';
         div.innerHTML = `
@@ -279,15 +310,15 @@
             <h2 style="margin:0 0 4px;font-size:20px;font-weight:800;color:#a78bfa;text-align:center;">PRE-EXAM CHECK</h2>
             <p style="text-align:center;color:#64748b;font-size:13px;margin-top:4px;margin-bottom:24px;">Complete all checks before your exam begins</p>
             <div style="background:rgba(124,58,237,0.1);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:14px;color:#cbd5e1;">
-              👤 <strong style="color:#a78bfa;" id="candName">${state.candidate.name}</strong> · ${state.candidate.email}
+              👤 <strong style="color:#a78bfa;">${state.candidate.name}</strong> · ${state.candidate.email}
             </div>
-            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;" id="checksList">
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
               ${[
                 { key:'internet', label:'Internet Connected', icon:'🌐', auto:true },
                 { key:'camera', label:'Camera Access', icon:'📷', auto:false },
                 { key:'mic', label:'Microphone Access', icon:'🎤', auto:false },
                 { key:'fullscreen', label:'Fullscreen Mode', icon:'🖥️', auto:false },
-              ].map(({key,label,icon,auto}) => `
+              ].map(({key,label,icon}) => `
                 <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);border-radius:10px;padding:12px 16px;border:1px solid ${state.checks[key]?'rgba(16,185,129,0.4)':'rgba(255,255,255,0.08)'};">
                   <span>${icon} ${label}</span>
                   <span id="${key}Status">${state.checks[key]?'✅':'⏳'}</span>
@@ -299,17 +330,17 @@
               <button id="reqFullscreen" style="flex:1;background:rgba(124,58,237,0.3);color:#a78bfa;padding:10px;border-radius:8px;">🖥️ Enter Fullscreen</button>
             </div>
             <div id="cameraPreviewContainer" style="display:${state.stream?'block':'none'};margin-bottom:20px;border-radius:10px;overflow:hidden;border:2px solid rgba(124,58,237,0.5);">
-              <div style="background:rgba(124,58,237,0.2);padding:6px 12px;font-size:12px;color:#a78bfa;">📹 Live Camera Preview — Ensure your face is clearly visible</div>
+              <div style="background:rgba(124,58,237,0.2);padding:6px 12px;font-size:12px;color:#a78bfa;">📹 Live Camera Preview</div>
               <video id="previewVideo" autoplay muted playsinline style="width:100%;display:block;max-height:200px;object-fit:cover;"></video>
             </div>
             <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;margin-bottom:20px;font-size:14px;color:#cbd5e1;line-height:1.5;">
               <input type="checkbox" id="agreeCheck" ${state.agreed?'checked':''} style="margin-top:2px;accent-color:#7c3aed;width:16px;height:16px;">
               I agree to the examination rules. I understand that tab switching, exiting fullscreen, or any form of malpractice will result in automatic submission.
             </label>
-            <button id="startExamBtn" class="${state.checks.camera && state.checks.mic && state.agreed ? 'btn-purple' : 'btn-disabled'}" style="width:100%;padding:14px;border-radius:10px;" ${!(state.checks.camera && state.checks.mic && state.agreed) ? 'disabled' : ''}>
-              ${state.checks.camera && state.checks.mic && state.agreed ? '🚀 START EXAM' : 'Complete all checks to continue'}
+            <button id="startExamBtn" class="${allChecksPass ? 'btn-purple' : 'btn-disabled'}" style="width:100%;padding:14px;border-radius:10px;" ${allChecksPass ? '' : 'disabled'}>
+              ${allChecksPass ? '🚀 START EXAM' : 'Complete all checks to continue'}
             </button>
-            <p style="text-align:center;margin-top:12px;color:#64748b;font-size:12px;">⏱ Duration: 30 minutes · 40 Questions · Multiple Choice & Short Answer</p>
+            <p style="text-align:center;margin-top:12px;color:#64748b;font-size:12px;">⏱ 30 min · 40 Questions · Proctored</p>
           </div>
         `;
         root.appendChild(div);
@@ -318,14 +349,12 @@
         document.getElementById('reqFullscreen').addEventListener('click', enterFullscreen);
         document.getElementById('agreeCheck').addEventListener('change', e => {
           state.agreed = e.target.checked;
-          document.getElementById('startExamBtn').disabled = !(state.checks.camera && state.checks.mic && state.agreed);
-          document.getElementById('startExamBtn').className = (state.checks.camera && state.checks.mic && state.agreed) ? 'btn-purple' : 'btn-disabled';
+          updatePrecheckButton();
         });
         document.getElementById('startExamBtn').addEventListener('click', startExam);
         if (state.stream) {
           document.getElementById('previewVideo').srcObject = state.stream;
         }
-        updatePrecheckStatus();
       }
 
       function updatePrecheckStatus() {
@@ -333,12 +362,16 @@
           const el = document.getElementById(`${k}Status`);
           if (el) el.textContent = state.checks[k] ? '✅' : '⏳';
         });
-        const startBtn = document.getElementById('startExamBtn');
-        if (startBtn) {
-          const canStart = state.checks.camera && state.checks.mic && state.agreed;
-          startBtn.disabled = !canStart;
-          startBtn.className = canStart ? 'btn-purple' : 'btn-disabled';
-        }
+        updatePrecheckButton();
+      }
+
+      function updatePrecheckButton() {
+        const btn = document.getElementById('startExamBtn');
+        if (!btn) return;
+        const canStart = state.checks.camera && state.checks.mic && state.checks.fullscreen && state.agreed;
+        btn.disabled = !canStart;
+        btn.className = canStart ? 'btn-purple' : 'btn-disabled';
+        btn.textContent = canStart ? '🚀 START EXAM' : 'Complete all checks to continue';
       }
 
       async function requestPermissions() {
@@ -372,7 +405,7 @@
         state.checks.fullscreen = !!document.fullscreenElement;
         if (state.stage === 'precheck') updatePrecheckStatus();
         if (state.stage === 'exam' && !document.fullscreenElement && !state.submitted) {
-          addViolation('You exited fullscreen.');
+          addViolation('Exited fullscreen');
           document.documentElement.requestFullscreen().catch(()=>{});
         }
       });
@@ -381,19 +414,28 @@
       window.addEventListener('offline', () => { state.internetOnline = false; state.checks.internet = false; if(state.stage==='precheck') updatePrecheckStatus(); });
 
       function startExam() {
-        if (!(state.checks.camera && state.checks.mic && state.agreed)) return;
+        if (!(state.checks.camera && state.checks.mic && state.checks.fullscreen && state.agreed)) return;
         state.questions = buildExam();
         state.current = 0;
         state.answers = {};
         state.flagged = new Set();
         state.timeLeft = 30 * 60;
         state.violations = 0;
+        state.violationLog = [];
         state.submitted = false;
         state.stage = 'exam';
         if (state.timerInterval) clearInterval(state.timerInterval);
         state.timerInterval = setInterval(timerTick, 1000);
-        document.documentElement.requestFullscreen().catch(()=>{});
+        startNoiseMonitoring();
+        startObstructionDetection();
         render();
+        // Start face mesh after exam page is rendered
+        setTimeout(() => {
+          const liveVideo = document.getElementById('liveCamera');
+          if (liveVideo && state.stream) {
+            initFaceMesh(liveVideo);
+          }
+        }, 500);
       }
 
       function timerTick() {
@@ -407,7 +449,238 @@
         if (state.timeLeft <= 0) submitExam();
       }
 
-      // ─── EXAM PAGE ─────────────────────────────────────────────
+      // ─── AUDIO NOISE DETECTION ──────────────────────────────────
+      function startNoiseMonitoring() {
+        if (!state.stream) return;
+        const audioTrack = state.stream.getAudioTracks()[0];
+        if (!audioTrack) return;
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const source = ctx.createMediaStreamSource(new MediaStream([audioTrack]));
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 256;
+          source.connect(analyser);
+          state.audioContext = ctx;
+          state.analyser = analyser;
+
+          const bufferLength = analyser.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
+
+          state.noiseCheckInterval = setInterval(() => {
+            if (state.stage !== 'exam' || state.submitted) return;
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
+            const avg = sum / bufferLength;
+            const noiseLevel = Math.min(100, Math.round((avg / 128) * 100));
+            updateNoiseMeter(noiseLevel);
+
+            if (noiseLevel > 60) {
+              if (!state.highNoiseSince) state.highNoiseSince = Date.now();
+              else if (Date.now() - state.highNoiseSince > 3000) {
+                addViolation('Excessive background noise');
+                state.highNoiseSince = null;
+              }
+            } else {
+              state.highNoiseSince = null;
+            }
+          }, 500);
+        } catch (e) {
+          console.warn('Audio analysis failed', e);
+        }
+      }
+
+      function updateNoiseMeter(level) {
+        const fill = document.getElementById('noiseFill');
+        if (fill) fill.style.width = level + '%';
+        const label = document.getElementById('noiseLabel');
+        if (label) label.textContent = level + '%';
+      }
+
+      // ─── CAMERA OBSTRUCTION DETECTION ───────────────────────────
+      function startObstructionDetection() {
+        if (!state.stream) return;
+        const video = document.getElementById('liveCamera');
+        if (!video) return;
+        const canvas = document.createElement('canvas');
+        canvas.width = 160; canvas.height = 120;
+        const ctx = canvas.getContext('2d');
+        state.canvasCtx = ctx;
+
+        state.obstructionCheckInterval = setInterval(() => {
+          if (state.stage !== 'exam' || state.submitted) return;
+          ctx.drawImage(video, 0, 0, 160, 120);
+          const frame = ctx.getImageData(0, 0, 160, 120);
+          let total = 0;
+          for (let i = 0; i < frame.data.length; i += 4) {
+            total += (frame.data[i] + frame.data[i+1] + frame.data[i+2]) / 3;
+          }
+          const avgBrightness = total / (frame.data.length / 4);
+
+          const dark = avgBrightness < 30;
+          const bright = avgBrightness > 240;
+
+          if (dark) {
+            if (!state.darkSince) state.darkSince = Date.now();
+            else if (Date.now() - state.darkSince > 4000) {
+              addViolation('Camera obstructed (too dark)');
+              state.darkSince = null;
+            }
+          } else { state.darkSince = null; }
+
+          if (bright) {
+            if (!state.brightSince) state.brightSince = Date.now();
+            else if (Date.now() - state.brightSince > 4000) {
+              addViolation('Camera obstructed (too bright)');
+              state.brightSince = null;
+            }
+          } else { state.brightSince = null; }
+
+          const brightnessEl = document.getElementById('brightnessVal');
+          if (brightnessEl) brightnessEl.textContent = Math.round(avgBrightness);
+        }, 5000);
+      }
+
+      // ─── FACE MESH (HEAD TURN, MULTIPLE FACES, FACE MISSING) ──
+      function initFaceMesh(videoElement) {
+        if (state.faceMeshRunning) return;
+        // Make sure MediaPipe is loaded
+        if (typeof FaceMesh === 'undefined') {
+          console.warn('MediaPipe FaceMesh not loaded yet, retrying...');
+          setTimeout(() => initFaceMesh(videoElement), 1000);
+          return;
+        }
+
+        const faceMesh = new FaceMesh({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        });
+
+        faceMesh.setOptions({
+          maxNumFaces: 2,          // detect up to 2 faces
+          refineLandmarks: false,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        });
+
+        faceMesh.onResults((results) => {
+          if (state.submitted || state.stage !== 'exam') return;
+
+          const faces = results.multiFaceLandmarks;
+          const faceCount = faces ? faces.length : 0;
+          const facePresent = faceCount > 0;
+          const multipleFaces = faceCount > 1;
+
+          // Update proctor panel face status
+          const faceStatusEl = document.getElementById('faceStatus');
+          if (faceStatusEl) {
+            if (multipleFaces) faceStatusEl.innerHTML = '❌ (multiple)';
+            else if (!facePresent) faceStatusEl.innerHTML = '❌ (none)';
+            else {
+              const yaw = getYaw(faces[0]);
+              const icon = yaw < -15 ? '👈' : yaw > 15 ? '👉' : '✅';
+              faceStatusEl.innerHTML = icon + ' (head forward)';
+            }
+          }
+
+          // --- Check multiple faces ---
+          if (multipleFaces) {
+            addViolation('Multiple faces detected');
+            return; // Skip other checks
+          }
+
+          // --- Check face missing ---
+          if (!facePresent) {
+            if (!state.faceMissingStart) state.faceMissingStart = Date.now();
+            else if (Date.now() - state.faceMissingStart > 3000) {
+              addViolation('Face not visible for 3 seconds');
+              state.faceMissingStart = null; // reset to avoid repeated flags
+            }
+          } else {
+            state.faceMissingStart = null;
+          }
+
+          // --- Head turn detection ---
+          if (facePresent && faces[0]) {
+            const yaw = getYaw(faces[0]);
+            let currentStatus = 'center';
+            if (yaw < -15) currentStatus = 'left';
+            else if (yaw > 15) currentStatus = 'right';
+
+            if (currentStatus !== 'center') {
+              if (!state.yawStart) state.yawStart = Date.now();
+              else if (Date.now() - state.yawStart > 2000) {
+                addViolation(`Head turned ${currentStatus} for 2 seconds`);
+                state.yawStart = null;
+              }
+            } else {
+              state.yawStart = null;
+            }
+            state.lastYawStatus = currentStatus;
+          }
+        });
+
+        // Feed video frames to faceMesh
+        const sendFrame = async () => {
+          if (!state.faceMeshRunning || state.submitted) return;
+          await faceMesh.send({ image: videoElement });
+          requestAnimationFrame(sendFrame);
+        };
+
+        state.faceMesh = faceMesh;
+        state.faceMeshRunning = true;
+        sendFrame();
+      }
+
+      // Simple yaw estimation using eye corners and nose tip
+      function getYaw(landmarks) {
+        // Indices: left eye outer (33), right eye outer (263), nose tip (1)
+        const leftEye = landmarks[33];
+        const rightEye = landmarks[263];
+        const noseTip = landmarks[1];
+        if (!leftEye || !rightEye || !noseTip) return 0;
+
+        // Calculate the midpoint between the eyes
+        const eyeMidX = (leftEye.x + rightEye.x) / 2;
+        // Compare nose tip x position to eye midpoint
+        const diff = noseTip.x - eyeMidX;
+        // Convert to approximate degrees (arbitrary scale)
+        const yaw = diff * 100; // scaling factor
+        return yaw;
+      }
+
+      // ─── VIOLATION HANDLER (with log) ──────────────────────────
+      function addViolation(msg) {
+        state.violations++;
+        const time = new Date().toLocaleTimeString('en-NG');
+        state.violationLog.push({ time, message: msg });
+        state.warningMsg = `⚠️ Warning ${state.violations}/3: ${msg}${state.violations>=3?'\n\nExam submitted automatically.':''}`;
+        state.showWarning = true;
+        showViolationModal();
+        const badge = document.querySelector('.violation-badge');
+        if (badge) badge.textContent = `${state.violations}/3`;
+        if (state.violations >= 3) setTimeout(submitExam, 2000);
+      }
+
+      function showViolationModal() {
+        const existing = document.querySelector('.modal-overlay');
+        if (existing) existing.remove();
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+          <div class="modal-box" style="border:2px solid #ef4444;">
+            <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+            <h3 style="color:#ef4444;">Malpractice Detected</h3>
+            <p style="color:#fca5a5;white-space:pre-line;">${state.warningMsg}</p>
+            ${state.violations < 3 ? '<button id="closeWarning" class="btn-purple">I Understand, Continue</button>' : ''}
+          </div>`;
+        document.body.appendChild(overlay);
+        document.getElementById('closeWarning')?.addEventListener('click', () => {
+          overlay.remove();
+          state.showWarning = false;
+        });
+      }
+
+      // ─── EXAM PAGE (with proctor panel & face status) ──────────
       function renderExam() {
         if (!state.questions.length) return;
         const q = state.questions[state.current];
@@ -426,7 +699,7 @@
           </div>
           <div style="display:flex;flex:1;" class="exam-layout">
             <div class="sidebar" style="width:220px;background:rgba(0,0,0,0.3);border-right:1px solid rgba(124,58,237,0.2);padding:16px;overflow-y:auto;">
-              <div style="font-size:12px;color:#a78bfa;font-weight:700;margin-bottom:12px;text-transform:uppercase;">Question Palette</div>
+              <div style="font-size:12px;color:#a78bfa;font-weight:700;margin-bottom:12px;">Question Palette</div>
               <div id="paletteGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;">
                 ${state.questions.map((q2,i) => {
                   let cls = 'palette-btn';
@@ -436,14 +709,16 @@
                   return `<button class="${cls}" data-index="${i}">${i+1}</button>`;
                 }).join('')}
               </div>
-              <div style="font-size:11px;color:#64748b;line-height:2;">
-                <div><span style="background:#10b981;border-radius:4px;padding:1px 6px;margin-right:4px;">■</span>Answered</div>
-                <div><span style="background:#f59e0b;border-radius:4px;padding:1px 6px;margin-right:4px;">■</span>Flagged</div>
-                <div><span style="background:rgba(255,255,255,0.15);border-radius:4px;padding:1px 6px;margin-right:4px;">■</span>Not answered</div>
-              </div>
-              <div style="margin-top:16px;padding:10px 12px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.2);">
-                <div style="font-size:11px;color:#fca5a5;">Violations</div>
-                <div style="font-size:22px;font-weight:800;color:#ef4444;">${state.violations}/3</div>
+              <div class="proctor-panel" id="proctorPanel">
+                <div>📷 Camera: <span id="camStatusProctor">🟢</span></div>
+                <div>🎤 Mic: <span id="micStatusProctor">🟢</span></div>
+                <div>🌐 Internet: <span id="netStatusProctor">🟢</span></div>
+                <div>🔊 Noise: <span id="noiseLabel">0%</span>
+                  <div class="noise-bar"><div id="noiseFill" class="noise-fill" style="width:0%"></div></div>
+                </div>
+                <div>💡 Brightness: <span id="brightnessVal">--</span></div>
+                <div>😶 Face: <span id="faceStatus">⏳</span></div>
+                <div style="margin-top:6px; font-size:10px; color:#ef4444;">Violations: <span class="violation-badge">${state.violations}/3</span></div>
               </div>
             </div>
             <div style="flex:1;padding:24px;overflow-y:auto;">
@@ -453,7 +728,7 @@
                   <span>${answeredCount} answered</span>
                 </div>
                 <div style="background:rgba(255,255,255,0.1);border-radius:99px;height:6px;">
-                  <div style="background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:99px;height:100%;width:${((state.current+1)/state.questions.length)*100}%;transition:width 0.3s;"></div>
+                  <div style="background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:99px;height:100%;width:${((state.current+1)/state.questions.length)*100}%;"></div>
                 </div>
               </div>
               <div style="display:inline-block;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);border-radius:99px;padding:4px 12px;font-size:12px;color:#a78bfa;font-weight:700;margin-bottom:16px;">
@@ -538,52 +813,21 @@
           const liveVideo = document.getElementById('liveCamera');
           if (liveVideo) liveVideo.srcObject = state.stream;
         }
+
+        // Update proctor panel statuses
+        updateProctorPanel();
       }
 
-      function addViolation(msg) {
-        state.violations++;
-        state.warningMsg = `⚠️ Warning ${state.violations}/3: ${msg}${state.violations>=3?'\n\nExam submitted automatically.':''}`;
-        state.showWarning = true;
-        showViolationModal();
-        const badge = document.querySelector('.violation-badge');
-        if (badge) badge.textContent = `${state.violations}/3`;
-        if (state.violations >= 3) setTimeout(submitExam, 2000);
+      function updateProctorPanel() {
+        const camEl = document.getElementById('camStatusProctor');
+        const micEl = document.getElementById('micStatusProctor');
+        const netEl = document.getElementById('netStatusProctor');
+        if (camEl) camEl.textContent = state.checks.camera ? '🟢' : '🔴';
+        if (micEl) micEl.textContent = state.checks.mic ? '🟢' : '🔴';
+        if (netEl) netEl.textContent = state.internetOnline ? '🟢' : '🔴';
       }
 
-      function showViolationModal() {
-        const existing = document.querySelector('.modal-overlay');
-        if (existing) existing.remove();
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.innerHTML = `
-          <div class="modal-box" style="border:2px solid #ef4444;">
-            <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
-            <h3 style="color:#ef4444;">Malpractice Detected</h3>
-            <p style="color:#fca5a5;white-space:pre-line;">${state.warningMsg}</p>
-            ${state.violations < 3 ? '<button id="closeWarning" class="btn-purple">I Understand, Continue</button>' : ''}
-          </div>`;
-        document.body.appendChild(overlay);
-        document.getElementById('closeWarning')?.addEventListener('click', () => {
-          overlay.remove();
-          state.showWarning = false;
-        });
-      }
-
-      // ─── ANTI-CHEAT ─────────────────────────────────────────────
-      window.addEventListener('blur', () => {
-        if (state.stage === 'exam' && !state.submitted) addViolation('You left the exam window.');
-      });
-      document.addEventListener('contextmenu', e => e.preventDefault());
-      document.addEventListener('selectstart', e => e.preventDefault());
-      document.addEventListener('keydown', e => {
-        if (state.stage !== 'exam') return;
-        if (e.key === 'F12' || (e.ctrlKey && ['u','U','c','C','v','V','x','X','i','I','j','J','s','S','p','P'].includes(e.key)) || (e.ctrlKey && e.shiftKey)) {
-          e.preventDefault();
-          addViolation('Forbidden key combination.');
-        }
-      });
-
-      // ─── CALCULATOR ─────────────────────────────────────────────
+      // ─── CALCULATOR (operators unified) ─────────────────────────
       function openCalculator() {
         if (state.showCalc) return;
         state.showCalc = true;
@@ -597,7 +841,7 @@
               <button class="calc-btn calc-clear" data-val="C">C</button>
               <button class="calc-btn calc-op" data-val="/">÷</button>
               <button class="calc-btn calc-op" data-val="*">×</button>
-              <button class="calc-btn calc-op" data-val="-">-</button>
+              <button class="calc-btn calc-op" data-val="-">−</button>
               <button class="calc-btn" data-val="7">7</button>
               <button class="calc-btn" data-val="8">8</button>
               <button class="calc-btn" data-val="9">9</button>
@@ -626,11 +870,18 @@
             else if (val === '=') {
               if (calcOp && calcPrev !== null) {
                 const a = parseFloat(calcPrev), b = parseFloat(calcDisplay);
-                let r = calcOp === '+' ? a+b : calcOp === '-' ? a-b : calcOp === '×' ? a*b : calcOp === '÷' ? (b===0 ? 'Error' : a/b) : b;
+                let r;
+                switch (calcOp) {
+                  case '+': r = a + b; break;
+                  case '-': r = a - b; break;
+                  case '*': r = a * b; break;
+                  case '/': r = b === 0 ? 'Error' : a / b; break;
+                  default: r = b;
+                }
                 calcDisplay = r === 'Error' ? 'Error' : String(parseFloat(r.toFixed(8)));
                 calcPrev = null; calcOp = null; calcFresh = true;
               }
-            } else if (['+','-','×','÷'].includes(val)) {
+            } else if (['+','-','*','/'].includes(val)) {
               calcPrev = calcDisplay; calcOp = val; calcFresh = true;
             } else {
               if (val === '.' && calcDisplay.includes('.')) return;
@@ -647,35 +898,42 @@
         });
       }
 
-      // ─── SUBMIT & EMAIL ─────────────────────────────────────────
+      // ─── SUBMIT & EMAIL (with violation log) ────────────────────
       function submitExam() {
         if (state.submitted) return;
         state.submitted = true;
         clearInterval(state.timerInterval);
+        clearInterval(state.noiseCheckInterval);
+        clearInterval(state.obstructionCheckInterval);
+        state.faceMeshRunning = false;
         if (state.stream) state.stream.getTracks().forEach(t => t.stop());
 
         const results = calcResults();
         const timeUsedSec = 30*60 - state.timeLeft;
         const timeUsedStr = `${Math.floor(timeUsedSec/60)}m ${timeUsedSec%60}s`;
 
-        // Send email to admin (NIN removed from template params)
+        const violationText = state.violationLog.length
+          ? state.violationLog.map(v => `[${v.time}] ${v.message}`).join('\n')
+          : 'None';
+
         const templateParams = {
           candidate_name: state.candidate.name,
           candidate_email: state.candidate.email,
           candidate_phone: state.candidate.phone,
-          candidate_nin: '',   // not collected, kept empty
+          candidate_nin: '',
           score: results.score,
           total: results.total,
           percentage: results.pct,
           time_used: timeUsedStr,
           violations: state.violations,
+          violation_log: violationText,
           exam_date: new Date().toLocaleString('en-NG', { dateStyle: 'full', timeStyle: 'short' }),
           to_email: ADMIN_EMAIL,
         };
 
         emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-          .then(() => console.log('✅ Result emailed to admin'))
-          .catch(err => console.warn('⚠️ Email failed:', err));
+          .then(() => console.log('✅ Result emailed'))
+          .catch(err => console.warn('Email error:', err));
 
         state.stage = 'result';
         render();
@@ -697,7 +955,7 @@
         };
       }
 
-      // ─── RESULT PAGE ────────────────────────────────────────────
+      // ─── RESULT PAGE (unchanged) ────────────────────────────────
       function renderResult() {
         const { score, total, pct, unanswered, wrong } = calcResults();
         const timeUsedSec = 30*60 - state.timeLeft;
@@ -731,14 +989,31 @@
         `;
         root.appendChild(div);
         document.getElementById('restartBtn').addEventListener('click', () => {
+          clearInterval(state.noiseCheckInterval);
+          clearInterval(state.obstructionCheckInterval);
+          state.faceMeshRunning = false;
+          if (state.stream) { state.stream.getTracks().forEach(t=>t.stop()); state.stream = null; }
           state.stage = 'login';
           state.candidate = { name:'', email:'', phone:'', pin:'' };
           state.agreed = false;
           state.checks = { camera:false, mic:false, fullscreen:false };
-          if (state.stream) { state.stream.getTracks().forEach(t=>t.stop()); state.stream = null; }
           render();
         });
       }
+
+      // ─── ANTI-CHEAT (same as before) ────────────────────────────
+      window.addEventListener('blur', () => {
+        if (state.stage === 'exam' && !state.submitted) addViolation('Left exam window');
+      });
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('selectstart', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if (state.stage !== 'exam') return;
+        if (e.key === 'F12' || (e.ctrlKey && ['u','U','c','C','v','V','x','X','i','I','j','J','s','S','p','P'].includes(e.key)) || (e.ctrlKey && e.shiftKey)) {
+          e.preventDefault();
+          addViolation('Forbidden key combination');
+        }
+      });
 
       // ─── INIT ───────────────────────────────────────────────────
       render();
