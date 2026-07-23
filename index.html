@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>OIMI  CBT Portal – Proctored (with Face Tracking)</title>
+  <title>OIMI CBT Portal – Proctored (with Face Tracking)</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -130,7 +130,12 @@
       const EMAILJS_TEMPLATE_ID = "template_gf9ilrc";
       const ADMIN_EMAIL = "oimi6702@gmail.com";
 
-      emailjs.init(EMAILJS_USER_ID);
+      // Safely init EmailJS (avoids crash if CDN fails)
+      if (window.emailjs) {
+        emailjs.init(EMAILJS_USER_ID);
+      } else {
+        console.warn('EmailJS not loaded – email sending will be unavailable.');
+      }
 
       // ─── QUESTION BANK: 15 Math, 15 English, 10 General Knowledge ──
       const QUESTION_BANK = {
@@ -258,7 +263,7 @@
         }
       }
 
-      // ─── LOGIN (unchanged) ─────────────────────────────────────
+      // ─── LOGIN (FIXED: removed stray semicolon) ────────────────
       function renderLogin() {
         const div = document.createElement('div');
         div.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;';
@@ -279,7 +284,8 @@
               <div id="loginError" style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;border-radius:8px;padding:10px 14px;color:#fca5a5;font-size:14px;display:${state.loginError?'block':'none'};">${state.loginError}</div>
               <button id="loginBtn" class="btn-purple" style="width:100%;">Proceed to Pre-Exam Check →</button>
             </div>
-            `;
+          </div>
+        `;
         root.appendChild(div);
         document.getElementById('loginBtn').addEventListener('click', handleLogin);
       }
@@ -432,7 +438,6 @@
         startNoiseMonitoring();
         startObstructionDetection();
         render();
-        // Start face mesh after exam page is rendered
         setTimeout(() => {
           const liveVideo = document.getElementById('liveCamera');
           if (liveVideo && state.stream) {
@@ -546,7 +551,6 @@
 
       // ─── FACE MESH (HEAD TURN, MULTIPLE FACES, FACE MISSING) ──
       function initFaceMesh(videoElement) {
-        // CHANGED: clean previous instance so we can restart on new video
         if (state.faceMesh) {
           state.faceMesh.close();
           state.faceMesh = null;
@@ -578,7 +582,6 @@
           const facePresent = faceCount > 0;
           const multipleFaces = faceCount > 1;
 
-          // Update proctor panel face status
           const faceStatusEl = document.getElementById('faceStatus');
           if (faceStatusEl) {
             if (multipleFaces) faceStatusEl.innerHTML = '❌ (multiple)';
@@ -590,13 +593,11 @@
             }
           }
 
-          // Check multiple faces
           if (multipleFaces) {
             addViolation('Multiple faces detected');
             return;
           }
 
-          // Check face missing
           if (!facePresent) {
             if (!state.faceMissingStart) state.faceMissingStart = Date.now();
             else if (Date.now() - state.faceMissingStart > 3000) {
@@ -607,7 +608,6 @@
             state.faceMissingStart = null;
           }
 
-          // Head turn detection
           if (facePresent && faces[0]) {
             const yaw = getYaw(faces[0]);
             let currentStatus = 'center';
@@ -645,7 +645,7 @@
         if (!leftEye || !rightEye || !noseTip) return 0;
         const eyeMidX = (leftEye.x + rightEye.x) / 2;
         const diff = noseTip.x - eyeMidX;
-        return diff * 100; // scaling
+        return diff * 100;
       }
 
       // ─── VIOLATION HANDLER (with log) ──────────────────────────
@@ -814,7 +814,7 @@
           if (liveVideo) liveVideo.srcObject = state.stream;
         }
 
-        // ----- NEW: restart face mesh on the new video element -----
+        // Restart face mesh on every re-render
         if (state.stream && !state.submitted) {
           if (state.faceMesh) {
             state.faceMeshRunning = false;
@@ -839,7 +839,7 @@
         if (netEl) netEl.textContent = state.internetOnline ? '🟢' : '🔴';
       }
 
-      // ─── CALCULATOR (operators unified) ─────────────────────────
+      // ─── CALCULATOR ─────────────────────────────────────────────
       function openCalculator() {
         if (state.showCalc) return;
         state.showCalc = true;
@@ -910,7 +910,7 @@
         });
       }
 
-      // ─── SUBMIT & EMAIL (with violation log) ────────────────────
+      // ─── SUBMIT & EMAIL ─────────────────────────────────────────
       function submitExam() {
         if (state.submitted) return;
         state.submitted = true;
@@ -943,9 +943,11 @@
           to_email: ADMIN_EMAIL,
         };
 
-        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-          .then(() => console.log('✅ Result emailed'))
-          .catch(err => console.warn('Email error:', err));
+        if (window.emailjs) {
+          emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+            .then(() => console.log('✅ Result emailed'))
+            .catch(err => console.warn('Email error:', err));
+        }
 
         state.stage = 'result';
         render();
