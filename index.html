@@ -1,561 +1,757 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>University CBT - Candidate Exam</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/dist/vision_bundle.mjs" type="module"></script>
-    <style>
-        :root {
-            --primary: #1e3a8a; --primary-light: #2563eb;
-            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
-            --bg: #f0f4f8; --card: #fff; --text: #1e293b; --text-light: #64748b;
-            --border: #e2e8f0; --shadow: 0 4px 24px rgba(0,0,0,0.06); --radius: 14px;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; user-select:none; }
-        .screen { display:none; min-height:100vh; animation:fadeIn 0.3s ease; }
-        .screen.active { display:flex; }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>UniCBT — Secure Examination Portal</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+:root {
+  --ink:#0f172a; --ink2:#334155; --ink3:#64748b;
+  --blue:#1d4ed8; --blue-light:#3b82f6; --blue-dim:#eff6ff; --blue-border:#bfdbfe;
+  --green:#16a34a; --green-dim:#f0fdf4; --green-border:#bbf7d0;
+  --red:#dc2626; --red-dim:#fef2f2; --red-border:#fecaca;
+  --amber:#d97706; --amber-dim:#fffbeb; --amber-border:#fde68a;
+  --bg:#f8fafc; --card:#ffffff; --border:#e2e8f0; --border2:#cbd5e1;
+  --r:12px; --r2:8px; --sh:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-user-select:none;user-select:none;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:up .35s ease both;}
 
-        #candidateLogin { justify-content:center; align-items:center; background:linear-gradient(135deg,#0f172a,#1e3a5f); padding:20px; }
-        .login-card { background:var(--card); border-radius:24px; padding:36px 30px; width:100%; max-width:560px; box-shadow:0 25px 50px rgba(0,0,0,0.3); }
-        .login-card h1 { text-align:center; font-size:1.6rem; margin-bottom:6px; }
-        .login-card .subtitle { text-align:center; color:var(--text-light); margin-bottom:24px; font-size:0.9rem; }
-        .form-group { margin-bottom:18px; }
-        .form-group label { font-weight:600; font-size:0.85rem; display:block; margin-bottom:5px; }
-        .form-group input, .form-group select { width:100%; padding:12px 14px; border:2px solid var(--border); border-radius:10px; font-size:0.95rem; background:#f8fafc; }
-        .form-row { display:flex; gap:12px; }
-        .form-row .form-group { flex:1; }
-        .btn { padding:12px 24px; border-radius:10px; font-weight:600; font-size:0.95rem; cursor:pointer; border:none; transition:0.2s; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
-        .btn-primary { background:var(--primary-light); color:#fff; width:100%; box-shadow:0 4px 14px rgba(37,99,235,0.3); }
-        .btn-primary:disabled { background:#94a3b8; cursor:not-allowed; box-shadow:none; }
-        .btn-outline { background:#fff; border:2px solid var(--primary-light); color:var(--primary-light); }
-        .btn-sm { padding:8px 16px; font-size:0.8rem; }
+/* ── LOGIN ── */
+#loginScreen{background:linear-gradient(160deg,#0f172a 0%,#1e3a8a 60%,#1d4ed8 100%);justify-content:center;align-items:center;padding:20px;position:relative;overflow:hidden;}
+#loginScreen::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");}
+.login-card{background:var(--card);border-radius:20px;padding:40px 36px;width:100%;max-width:580px;box-shadow:0 32px 64px rgba(0,0,0,0.35);position:relative;z-index:1;}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+.login-logo .icon{width:44px;height:44px;background:linear-gradient(135deg,var(--blue),var(--blue-light));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+.login-logo .brand{font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;}
+.login-logo .brand span{color:var(--blue-light);}
+.login-divider{font-size:0.78rem;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin:0 0 20px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:520px){.form-row{grid-template-columns:1fr;}}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:0.8rem;font-weight:600;color:var(--ink2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+.fg input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:var(--r2);font-size:0.9rem;font-family:inherit;background:#f8fafc;color:var(--ink);transition:border-color .2s;}
+.fg input:focus{outline:none;border-color:var(--blue-light);background:#fff;}
 
-        .multi-select { position:relative; }
-        .multi-select .selected-tags { display:flex; flex-wrap:wrap; gap:4px; padding:8px; border:2px solid var(--border); border-radius:10px; background:#fff; min-height:44px; cursor:pointer; }
-        .multi-select .tag { background:var(--primary-light); color:#fff; padding:4px 10px; border-radius:20px; font-size:0.8rem; display:flex; align-items:center; gap:4px; }
-        .multi-select .tag .remove { cursor:pointer; font-weight:bold; }
-        .multi-select .dropdown { position:absolute; top:100%; left:0; right:0; background:#fff; border:2px solid var(--border); border-radius:10px; max-height:220px; overflow-y:auto; z-index:10; display:none; box-shadow:0 8px 20px rgba(0,0,0,0.1); }
-        .multi-select .dropdown.open { display:block; }
-        .multi-select .search-input { width:100%; padding:10px; border:none; border-bottom:1px solid var(--border); }
-        .multi-select .option { padding:10px 14px; display:flex; align-items:center; gap:8px; cursor:pointer; }
-        .multi-select .option:hover { background:#f1f5f9; }
-        .multi-select .option input { margin:0; }
+/* multi-select */
+.ms-wrap{position:relative;}
+.ms-box{display:flex;flex-wrap:wrap;gap:5px;padding:8px 10px;border:2px solid var(--border);border-radius:var(--r2);background:#f8fafc;min-height:46px;cursor:pointer;transition:border-color .2s;align-items:center;}
+.ms-box:focus-within,.ms-box.open{border-color:var(--blue-light);background:#fff;}
+.ms-tag{background:var(--blue);color:#fff;padding:3px 10px;border-radius:20px;font-size:0.76rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.ms-tag .x{cursor:pointer;font-size:.9rem;line-height:1;opacity:.8;}
+.ms-tag .x:hover{opacity:1;}
+.ms-placeholder{color:var(--ink3);font-size:.88rem;}
+.ms-count{margin-left:auto;font-size:.75rem;font-weight:700;color:var(--ink3);}
+.ms-dropdown{position:absolute;top:calc(100%+4px);left:0;right:0;background:#fff;border:2px solid var(--blue-light);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;display:none;overflow:hidden;}
+.ms-dropdown.open{display:block;}
+.ms-search{width:100%;padding:10px 14px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:.88rem;}
+.ms-search:focus{outline:none;}
+.ms-opts{max-height:200px;overflow-y:auto;}
+.ms-opt{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.88rem;transition:background .15s;}
+.ms-opt:hover{background:#f1f5f9;}
+.ms-opt.checked{background:var(--blue-dim);}
+.ms-opt .cb{width:16px;height:16px;border:2px solid var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.ms-opt.checked .cb{background:var(--blue);border-color:var(--blue);}
+.ms-opt.checked .cb::after{content:'✓';color:#fff;font-size:.65rem;font-weight:700;}
+.ms-opt.disabled{opacity:.4;cursor:not-allowed;}
 
-        .checklist { list-style:none; }
-        .checklist li { padding:10px 14px; border-radius:8px; background:#f8fafc; border:1px solid var(--border); margin-bottom:6px; display:flex; align-items:center; gap:10px; }
-        .checklist li.passed { background:#f0fdf4; border-color:#bbf7d0; }
-        .checklist li.failed { background:#fef2f2; border-color:#fecaca; }
-        .camera-preview-box { width:200px; height:150px; margin:0 auto; background:#1e293b; border-radius:12px; overflow:hidden; }
+.btn{padding:12px 24px;border-radius:var(--r2);font-weight:700;font-size:.9rem;cursor:pointer;border:none;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:inherit;}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue-light));color:#fff;width:100%;box-shadow:0 4px 14px rgba(29,78,216,.3);}
+.btn-primary:hover{box-shadow:0 6px 20px rgba(29,78,216,.4);transform:translateY(-1px);}
+.btn-primary:disabled{background:#94a3b8;box-shadow:none;transform:none;cursor:not-allowed;}
+.btn-outline{background:#fff;border:2px solid var(--border2);color:var(--ink2);}
+.btn-outline:hover{border-color:var(--blue-light);color:var(--blue);}
+.btn-sm{padding:8px 16px;font-size:.8rem;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-success{background:var(--green);color:#fff;}
+.info-row{display:flex;gap:8px;margin-bottom:18px;padding:10px 14px;background:var(--blue-dim);border:1px solid var(--blue-border);border-radius:var(--r2);}
+.info-row .dot{font-size:1rem;}
+.info-row p{font-size:.82rem;color:#1e40af;line-height:1.5;}
 
-        .exam-topbar { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; background:#fff; border-bottom:1px solid var(--border); gap:10px; }
-        .timer { font-weight:700; font-size:1.2rem; }
-        .subject-indicator { background:#e0e7ff; padding:4px 12px; border-radius:20px; font-weight:600; font-size:0.85rem; }
-        .question-content { padding:24px; flex:1; overflow-y:auto; }
-        .subject-header { font-size:1.2rem; font-weight:700; color:var(--primary); margin:20px 0 12px; border-bottom:2px solid var(--border); padding-bottom:8px; }
-        .saq-input { width:100%; padding:12px; border:2px solid var(--border); border-radius:10px; margin-top:8px; font-size:0.95rem; }
-        .violation-toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#1e293b; color:#fff; padding:12px 24px; border-radius:30px; z-index:2000; display:none; }
-        .violation-toast.show { display:block; animation:slideDown 0.3s ease; }
+/* ── PRE-EXAM ── */
+#preExamScreen{justify-content:center;align-items:center;padding:20px;background:linear-gradient(160deg,#0f172a 0%,#1e3a8a 60%,#1d4ed8 100%);}
+.pre-card{background:#fff;border-radius:20px;padding:36px;width:100%;max-width:560px;box-shadow:0 32px 64px rgba(0,0,0,0.35);}
+.pre-card h2{font-size:1.2rem;font-weight:800;margin-bottom:4px;}
+.pre-card .sub{font-size:.82rem;color:var(--ink3);margin-bottom:20px;}
+.check-list{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.check-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f8fafc;border:1px solid var(--border);border-radius:var(--r2);transition:all .3s;}
+.check-item.pass{background:var(--green-dim);border-color:var(--green-border);}
+.check-item.fail{background:var(--red-dim);border-color:var(--red-border);}
+.check-item .ci-icon{font-size:1.1rem;width:28px;text-align:center;}
+.check-item .ci-label{flex:1;font-size:.88rem;font-weight:600;}
+.check-item .ci-status{font-size:1rem;}
+.cam-preview{width:100%;height:160px;background:#1e293b;border-radius:var(--r);overflow:hidden;margin:14px 0;}
+.cam-preview video{width:100%;height:100%;object-fit:cover;}
+.pre-actions{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.agree-row{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r2);margin-bottom:16px;}
+.agree-row input{margin-top:2px;accent-color:var(--blue);width:16px;height:16px;flex-shrink:0;}
+.agree-row label{font-size:.82rem;color:#92400e;line-height:1.5;cursor:pointer;}
 
-        @media(max-width:768px) { .form-row { flex-direction:column; } }
-    </style>
+/* ── EXAM ── */
+#examScreen{flex-direction:column;min-height:100vh;}
+.exam-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#fff;border-bottom:2px solid var(--border);position:sticky;top:0;z-index:50;flex-wrap:wrap;}
+.eb-subject{background:var(--blue-dim);color:var(--blue);padding:5px 14px;border-radius:20px;font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;}
+.eb-timer{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.1rem;color:var(--ink);margin-left:auto;}
+.eb-timer.warn{color:var(--amber);}
+.eb-timer.danger{color:var(--red);animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.eb-violations{font-size:.8rem;font-weight:700;color:var(--red);background:var(--red-dim);padding:4px 10px;border-radius:20px;}
+.eb-qnum{font-size:.8rem;color:var(--ink3);font-weight:600;}
+
+.exam-body{flex:1;overflow-y:auto;padding:24px 16px;max-width:840px;width:100%;margin:0 auto;}
+.subject-heading{display:flex;align-items:center;gap:10px;margin:28px 0 16px;padding-bottom:10px;border-bottom:2px solid var(--border);}
+.subject-heading h3{font-size:1rem;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;}
+.subject-heading .sq{background:var(--blue);color:#fff;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:20px;}
+.q-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px;box-shadow:var(--sh);transition:border-color .2s;}
+.q-card.current{border-color:var(--blue-light);box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.q-card.answered{border-left:4px solid var(--green);}
+.q-num{font-size:.75rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.q-text{font-size:.95rem;line-height:1.65;color:var(--ink);font-weight:500;margin-bottom:14px;}
+.q-type-badge{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 7px;border-radius:4px;margin-bottom:8px;}
+.badge-mcq{background:#e0f2fe;color:#0369a1;}
+.badge-saq{background:#fef3c7;color:#92400e;}
+.opts{display:flex;flex-direction:column;gap:8px;}
+.opt-label{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:var(--r2);cursor:pointer;transition:all .15s;font-size:.9rem;}
+.opt-label:hover{border-color:var(--blue-light);background:var(--blue-dim);}
+.opt-label input[type=radio]{margin-top:2px;accent-color:var(--blue);flex-shrink:0;}
+.opt-label.selected{border-color:var(--blue);background:var(--blue-dim);font-weight:600;}
+.saq-input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:var(--r2);font-size:.9rem;font-family:inherit;background:#f8fafc;margin-top:6px;transition:border-color .2s;-webkit-user-select:text;user-select:text;}
+.saq-input:focus{outline:none;border-color:var(--blue-light);background:#fff;}
+
+.exam-footer{padding:12px 16px;background:#fff;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;max-width:840px;margin:0 auto;width:100%;}
+.ef-nav{display:flex;gap:8px;}
+.progress-bar{height:3px;background:var(--border);position:relative;}
+.progress-bar .fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-light));transition:width .3s;}
+
+/* question grid nav */
+.q-grid-wrap{background:#fff;border-top:1px solid var(--border);padding:12px 16px;}
+.q-grid{display:flex;flex-wrap:wrap;gap:5px;max-width:840px;margin:0 auto;}
+.q-dot{width:28px;height:28px;border-radius:6px;border:2px solid var(--border);background:#f8fafc;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;color:var(--ink3);}
+.q-dot:hover{border-color:var(--blue-light);color:var(--blue);}
+.q-dot.current{border-color:var(--blue);background:var(--blue);color:#fff;}
+.q-dot.answered{border-color:var(--green);background:var(--green-dim);color:var(--green);}
+
+/* calculator */
+#calcWrap{position:fixed;bottom:80px;right:16px;width:240px;background:#fff;border-radius:var(--r);box-shadow:0 8px 32px rgba(0,0,0,0.2);display:none;z-index:200;border:1px solid var(--border);}
+.calc-head{padding:10px 14px;background:var(--ink);color:#fff;display:flex;justify-content:space-between;align-items:center;border-radius:var(--r) var(--r) 0 0;font-size:.82rem;font-weight:700;}
+.calc-display{padding:12px 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:1.2rem;background:#f1f5f9;border-bottom:1px solid var(--border);min-height:48px;word-break:break-all;}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);}
+.calc-btn{padding:12px 4px;border:none;border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0;background:#fff;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:600;color:var(--ink2);transition:background .1s;}
+.calc-btn:hover{background:#f1f5f9;}
+.calc-btn.op{color:var(--blue);}
+.calc-btn.eq{background:var(--blue);color:#fff;}
+.calc-btn.eq:hover{background:var(--blue-light);}
+.calc-btn.clr{color:var(--red);}
+
+/* violations toast */
+.v-toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:30px;font-size:.85rem;font-weight:600;z-index:300;white-space:nowrap;animation:toastIn .3s ease;box-shadow:0 4px 16px rgba(0,0,0,.3);}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* results */
+#resultsScreen{justify-content:center;align-items:center;padding:20px;background:linear-gradient(160deg,#0f172a 0%,#1e3a8a 60%);}
+.result-card{background:#fff;border-radius:20px;padding:36px;width:100%;max-width:560px;text-align:center;box-shadow:0 32px 64px rgba(0,0,0,.35);}
+.result-icon{font-size:3rem;margin-bottom:12px;}
+.result-score{font-size:2.5rem;font-weight:800;color:var(--blue);letter-spacing:-.03em;margin:8px 0;}
+.result-label{font-size:.82rem;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:20px;}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0;text-align:left;}
+.rg-item{padding:12px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:var(--r2);}
+.rg-item .rg-label{font-size:.72rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.rg-item .rg-val{font-size:.95rem;font-weight:700;color:var(--ink);}
+.sub-breakdown{margin:16px 0;text-align:left;}
+.sub-breakdown h4{font-size:.82rem;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.sb-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border-radius:var(--r2);margin-bottom:6px;font-size:.85rem;}
+.sb-row .sb-name{flex:1;font-weight:600;}
+.sb-row .sb-score{font-weight:700;color:var(--blue);}
+</style>
 </head>
 <body>
-    <!-- CANDIDATE LOGIN -->
-    <div class="screen active" id="candidateLogin">
-        <div class="login-card">
-            <h1>🎓 University CBT</h1>
-            <p class="subtitle">Secure Examination Platform</p>
-            <form id="candidateForm">
-                <div class="form-row">
-                    <div class="form-group"><label>Full Name</label><input type="text" id="fullName" required></div>
-                    <div class="form-group"><label>Email</label><input type="email" id="email" required></div>
-                </div>
-                <div class="form-group"><label>NIN / Registration Number</label><input type="text" id="nin" required></div>
-                <div class="form-group"><label>Phone</label><input type="tel" id="phone" required></div>
-                <div class="form-group">
-                    <label>Select Subjects (min 3, max 4)</label>
-                    <div class="multi-select" id="subjectMultiSelect">
-                        <div class="selected-tags" id="subjectTags"><span style="color:#94a3b8;">Click to select subjects...</span></div>
-                        <div class="dropdown" id="subjectDropdown">
-                            <input type="text" class="search-input" id="subjectSearch" placeholder="Search subjects...">
-                            <div id="subjectOptions"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group"><label>Exam PIN</label><input type="password" id="examPin" required></div>
-                <button type="submit" class="btn btn-primary" id="btnCandidateLogin">Proceed to Pre‑Exam Check</button>
-            </form>
-        </div>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="screen active anim" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">🎓</div>
+      <div class="brand">Uni<span>CBT</span></div>
     </div>
-
-    <!-- PRE-EXAM CHECK (dynamic) -->
-    <div class="screen" id="preExamScreen"></div>
-
-    <!-- EXAM SCREEN -->
-    <div class="screen" id="examScreen">
-        <div class="exam-topbar">
-            <span class="subject-indicator" id="currentSubjectLabel">Mathematics</span>
-            <span class="timer" id="examTimer">⏱ 60:00</span>
-            <span id="violationCounter">⚠️ 0/3</span>
-            <button class="btn btn-sm btn-outline" id="toggleCalculator" style="display:none;">🧮 Calc</button>
-        </div>
-        <div class="question-content" id="questionContainer"></div>
-        <div style="padding:16px; display:flex; gap:8px; justify-content:flex-end;">
-            <button class="btn btn-outline btn-sm" id="prevQuestion">◀ Prev</button>
-            <button class="btn btn-outline btn-sm" id="nextQuestion">Next ▶</button>
-            <button class="btn btn-sm btn-success" id="saveAnswer">💾 Save</button>
-            <button class="btn btn-sm btn-danger" id="submitExam">📤 Submit</button>
-        </div>
+    <div class="login-divider">Candidate Information</div>
+    <div class="form-row">
+      <div class="fg"><label>Full Name</label><input type="text" id="iName" placeholder="As on ID card" required></div>
+      <div class="fg"><label>Email Address</label><input type="email" id="iEmail" placeholder="you@email.com" required></div>
     </div>
-
-    <!-- RESULTS SCREEN -->
-    <div class="screen" id="resultsScreen">
-        <div style="max-width:600px;margin:40px auto;background:#fff;padding:30px;border-radius:20px;text-align:center;">
-            <h2>Exam Submitted</h2>
-            <div id="resultsContent"></div>
-            <button class="btn btn-primary" onclick="location.reload()">Finish</button>
-        </div>
+    <div class="form-row">
+      <div class="fg"><label>NIN / Reg. Number</label><input type="text" id="iNin" placeholder="12345678901" required></div>
+      <div class="fg"><label>Phone Number</label><input type="tel" id="iPhone" placeholder="0801234567" required></div>
     </div>
-
-    <!-- FLOATING CALCULATOR -->
-    <div id="calcFloat" style="position:fixed; top:70px; right:20px; width:250px; background:#fff; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.2); display:none; z-index:1000;">
-        <div style="padding:10px;background:#1e293b;color:#fff;display:flex;justify-content:space-between;">
-            <span>Calculator</span><span style="cursor:pointer;" id="closeCalc">✕</span>
+    <div class="fg">
+      <label>Select Subjects <span style="color:var(--ink3);font-weight:400;text-transform:none;">(min 3, max 4)</span></label>
+      <div class="ms-wrap" id="msWrap">
+        <div class="ms-box" id="msBox" tabindex="0">
+          <span class="ms-placeholder" id="msPlaceholder">Click to select subjects…</span>
+          <span class="ms-count" id="msCount"></span>
         </div>
-        <div id="calcDisplay" style="padding:16px;text-align:right;font-size:1.3rem;border-bottom:1px solid #eee;">0</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);" id="calcButtons"></div>
+        <div class="ms-dropdown" id="msDropdown">
+          <input class="ms-search" id="msSearch" placeholder="Search subjects…" type="text">
+          <div class="ms-opts" id="msOpts"></div>
+        </div>
+      </div>
     </div>
+    <div class="fg"><label>Exam PIN</label><input type="password" id="iPin" placeholder="Enter your exam PIN" required></div>
+    <div class="info-row">
+      <span class="dot">ℹ️</span>
+      <p>Your camera and microphone will be required for proctoring. Ensure you are in a well-lit, quiet environment before proceeding.</p>
+    </div>
+    <button class="btn btn-primary" id="btnLogin">Proceed to System Check →</button>
+  </div>
+</div>
 
-    <script type="module">
-        import { FaceLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/dist/vision_bundle.mjs';
+<!-- ═══ PRE-EXAM CHECK ═══ -->
+<div class="screen" id="preExamScreen">
+  <div class="pre-card anim">
+    <h2>Pre-Exam System Check</h2>
+    <p class="sub">All items must pass before the exam begins.</p>
+    <ul class="check-list" id="checkList">
+      <li class="check-item" id="chkCam"><span class="ci-icon">📷</span><span class="ci-label">Camera Access</span><span class="ci-status">⏳</span></li>
+      <li class="check-item" id="chkMic"><span class="ci-icon">🎤</span><span class="ci-label">Microphone Access</span><span class="ci-status">⏳</span></li>
+      <li class="check-item" id="chkFs"><span class="ci-icon">🖥️</span><span class="ci-label">Fullscreen Mode</span><span class="ci-status">⏳</span></li>
+      <li class="check-item" id="chkFace"><span class="ci-icon">🤳</span><span class="ci-label">Face Detected</span><span class="ci-status">⏳</span></li>
+    </ul>
+    <div class="cam-preview"><video id="previewVid" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;"></video></div>
+    <div class="pre-actions">
+      <button class="btn btn-outline btn-sm" id="btnReqCam">📷 Request Camera & Mic</button>
+      <button class="btn btn-outline btn-sm" id="btnReqFs">🖥️ Enter Fullscreen</button>
+    </div>
+    <div class="agree-row">
+      <input type="checkbox" id="agreeChk">
+      <label for="agreeChk">I confirm I am the registered candidate, I am alone in this environment, I will not switch tabs or use another device, and I understand that violations may result in automatic submission.</label>
+    </div>
+    <button class="btn btn-primary" id="btnStartExam" disabled>Start Exam →</button>
+  </div>
+</div>
 
-        const VALID_PIN = 'CBT2024';
-        const MAX_VIOLATIONS = 3;
-        const EXAM_DURATION_SEC = 60 * 60;
+<!-- ═══ EXAM ═══ -->
+<div class="screen" id="examScreen" style="flex-direction:column;">
+  <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+  <div class="exam-bar">
+    <span class="eb-subject" id="ebSubject">—</span>
+    <span class="eb-qnum" id="ebQNum">Q1 / 60</span>
+    <span class="eb-timer" id="ebTimer">60:00</span>
+    <span class="eb-violations" id="ebViol">⚠ 0/3</span>
+    <button class="btn btn-outline btn-sm" id="btnCalc" style="display:none;">🧮</button>
+    <button class="btn btn-danger btn-sm" id="btnSubmit">Submit Exam</button>
+  </div>
+  <div class="exam-body" id="examBody"></div>
+  <div class="q-grid-wrap"><div class="q-grid" id="qGrid"></div></div>
+  <div class="exam-footer">
+    <div class="ef-nav">
+      <button class="btn btn-outline btn-sm" id="btnPrev">◀ Prev</button>
+      <button class="btn btn-outline btn-sm" id="btnNext">Next ▶</button>
+    </div>
+    <button class="btn btn-success btn-sm" id="btnSave">💾 Save Answer</button>
+  </div>
+</div>
 
-        const questionBank = {
-            "Mathematics": [
-                { id:1, type:"mcq", text:"Solve for x: 2x + 5 = 15", options:["5","6","10","7"], correct:1 },
-                { id:2, type:"mcq", text:"What is the area of a circle with radius 7cm? (π=22/7)", options:["154cm²","144cm²","164cm²","134cm²"], correct:0 },
-                { id:3, type:"saq", text:"Expand: (a+b)²", answer:["a²+2ab+b²","a^2+2ab+b^2"] },
-                { id:4, type:"mcq", text:"If f(x)=3x-2, find f(4)", options:["10","12","14","8"], correct:0 },
-                { id:5, type:"saq", text:"Simplify: √64", answer:["8"] },
-                { id:6, type:"mcq", text:"The sum of angles in a triangle is:", options:["90°","180°","270°","360°"], correct:1 },
-                { id:7, type:"mcq", text:"Factorise: x²-9", options:["(x-3)(x+3)","(x-9)(x+1)","(x-3)²","(x+9)(x-1)"], correct:0 },
-                { id:8, type:"saq", text:"What is the value of π (pi) correct to 2 decimal places?", answer:["3.14"] },
-                { id:9, type:"mcq", text:"Solve: 3y - 7 = 2y + 3", options:["y=10","y=4","y=-4","y=0"], correct:0 },
-                { id:10, type:"mcq", text:"What is the perimeter of a rectangle with length 8cm and width 5cm?", options:["26cm","40cm","13cm","20cm"], correct:0 },
-                { id:11, type:"saq", text:"Convert 0.75 to a fraction in its simplest form.", answer:["3/4"] },
-                { id:12, type:"mcq", text:"If a=2, b=3, evaluate a²+b²", options:["13","10","5","12"], correct:0 },
-                { id:13, type:"mcq", text:"Which of these is a prime number?", options:["15","21","23","27"], correct:2 },
-                { id:14, type:"saq", text:"Simplify: 2(3x - 4) + 5", answer:["6x-3","6x - 3"] },
-                { id:15, type:"mcq", text:"The mean of 2,4,6,8,10 is:", options:["5","6","7","8"], correct:1 },
-                { id:16, type:"mcq", text:"What is the next term: 2,4,8,16,?", options:["24","32","30","20"], correct:1 },
-                { id:17, type:"saq", text:"Write 25% as a decimal.", answer:["0.25"] },
-                { id:18, type:"mcq", text:"If the diameter of a circle is 14cm, its radius is:", options:["28cm","7cm","14cm","21cm"], correct:1 },
-                { id:19, type:"mcq", text:"Solve: x/5 = 4", options:["20","9","1","0.8"], correct:0 },
-                { id:20, type:"saq", text:"Express 500 in standard form.", answer:["5×10²","5*10^2","5x10^2"] }
-            ],
-            "English Language": [
-                { id:1, type:"mcq", text:"Choose the correct option: Neither the teacher nor the students ___ present.", options:["was","were","are","is"], correct:1 },
-                { id:2, type:"saq", text:"Give a synonym for 'happy'.", answer:["joyful","glad","cheerful","content"] },
-                { id:3, type:"mcq", text:"What is the past tense of 'go'?", options:["goed","went","gone","going"], correct:1 },
-                { id:4, type:"saq", text:"Complete the proverb: 'All that glitters is not _____.'", answer:["gold"] },
-                { id:5, type:"mcq", text:"Which word is an adjective?", options:["quickly","beautiful","run","and"], correct:1 },
-                { id:6, type:"mcq", text:"The phrase 'kick the bucket' means:", options:["to dance","to die","to start","to play"], correct:1 },
-                { id:7, type:"saq", text:"Write the plural of 'child'.", answer:["children"] },
-                { id:8, type:"mcq", text:"Choose the correct spelling:", options:["recieve","receive","receve","reseive"], correct:1 },
-                { id:9, type:"saq", text:"Give an antonym for 'brave'.", answer:["cowardly","timid","fearful"] },
-                { id:10, type:"mcq", text:"Identify the figure of speech: 'She is as busy as a bee.'", options:["metaphor","simile","personification","irony"], correct:1 },
-                { id:11, type:"saq", text:"Correct the sentence: 'He don't like apples.'", answer:["He doesn't like apples."] },
-                { id:12, type:"mcq", text:"Which is a conjunction?", options:["quickly","but","beautiful","under"], correct:1 },
-                { id:13, type:"mcq", text:"The word 'unhappy' contains a:", options:["suffix","prefix","root","verb"], correct:1 },
-                { id:14, type:"saq", text:"Write the comparative form of 'good'.", answer:["better"] },
-                { id:15, type:"mcq", text:"'The boy who cried wolf' teaches about:", options:["honesty","kindness","bravery","patience"], correct:0 },
-                { id:16, type:"mcq", text:"Choose the correct article: ___ hour ago.", options:["a","an","the","no article"], correct:1 },
-                { id:17, type:"saq", text:"What is the meaning of 'benevolent'?", answer:["kind","generous","charitable"] },
-                { id:18, type:"mcq", text:"Which sentence is correct?", options:["He go to school.","He goes to school.","He going to school.","He gone to school."], correct:1 },
-                { id:19, type:"saq", text:"Rearrange: 'book / interesting / an / is / this'", answer:["This is an interesting book."] },
-                { id:20, type:"mcq", text:"A group of sheep is called a:", options:["flock","herd","pack","school"], correct:0 }
-            ],
-            "Physics": [
-                { id:1, type:"mcq", text:"What is the SI unit of force?", options:["Joule","Newton","Watt","Pascal"], correct:1 },
-                { id:2, type:"saq", text:"State Ohm's law.", answer:["V=IR","voltage = current × resistance","v=ir"] },
-                { id:3, type:"mcq", text:"Which mirror is used as a rear-view mirror?", options:["concave","convex","plane","cylindrical"], correct:1 },
-                { id:4, type:"mcq", text:"The speed of light in vacuum is approximately:", options:["3×10⁸ m/s","3×10⁶ m/s","300 m/s","3×10¹⁰ m/s"], correct:0 },
-                { id:5, type:"saq", text:"Define acceleration.", answer:["rate of change of velocity"] },
-                { id:6, type:"mcq", text:"Which device converts electrical energy to mechanical?", options:["Motor","Generator","Battery","Resistor"], correct:0 },
-                { id:7, type:"mcq", text:"An object with mass 5kg is moving at 2m/s. Its kinetic energy is:", options:["10J","20J","5J","4J"], correct:0 },
-                { id:8, type:"saq", text:"What is the formula for weight?", answer:["W=mg","weight = mass × gravity"] },
-                { id:9, type:"mcq", text:"The unit of electric current is:", options:["Volt","Ampere","Ohm","Coulomb"], correct:1 },
-                { id:10, type:"saq", text:"What is the principle of conservation of energy?", answer:["energy cannot be created or destroyed"] },
-                { id:11, type:"mcq", text:"Which color has the longest wavelength?", options:["Violet","Blue","Green","Red"], correct:3 },
-                { id:12, type:"mcq", text:"A magnet has ____ poles.", options:["one","two","three","four"], correct:1 },
-                { id:13, type:"saq", text:"What does LED stand for?", answer:["light emitting diode"] },
-                { id:14, type:"mcq", text:"The earth's pull on a body is called:", options:["mass","weight","inertia","momentum"], correct:1 },
-                { id:15, type:"mcq", text:"Sound travels fastest in:", options:["air","water","vacuum","steel"], correct:3 },
-                { id:16, type:"saq", text:"Convert 1km to meters.", answer:["1000"] },
-                { id:17, type:"mcq", text:"A lens that converges light is:", options:["concave","convex","plano","bifocal"], correct:1 },
-                { id:18, type:"mcq", text:"What is the boiling point of water at sea level?", options:["90°C","100°C","110°C","120°C"], correct:1 },
-                { id:19, type:"saq", text:"Define work done.", answer:["force × distance"] },
-                { id:20, type:"mcq", text:"Which of these is a semiconductor?", options:["copper","glass","silicon","rubber"], correct:2 }
-            ],
-            "General Paper": [
-                { id:1, type:"mcq", text:"Who is the current UN Secretary-General (2024)?", options:["António Guterres","Ban Ki-moon","Kofi Annan","Boutros Boutros-Ghali"], correct:0 },
-                { id:2, type:"saq", text:"What does UNESCO stand for?", answer:["United Nations Educational, Scientific and Cultural Organization"] },
-                { id:3, type:"mcq", text:"Which country won the 2022 FIFA World Cup?", options:["France","Brazil","Argentina","Germany"], correct:2 },
-                { id:4, type:"mcq", text:"The largest continent by area is:", options:["Africa","Asia","Europe","North America"], correct:1 },
-                { id:5, type:"saq", text:"Name the first president of Nigeria.", answer:["Nnamdi Azikiwe","Dr. Nnamdi Azikiwe"] },
-                { id:6, type:"mcq", text:"Which planet is known as the Red Planet?", options:["Venus","Mars","Jupiter","Saturn"], correct:1 },
-                { id:7, type:"mcq", text:"What is the chemical symbol for gold?", options:["Ag","Au","Fe","Cu"], correct:1 },
-                { id:8, type:"saq", text:"What year did Nigeria gain independence?", answer:["1960"] },
-                { id:9, type:"mcq", text:"The river Niger flows through which countries?", options:["Nigeria only","Nigeria and Niger","Several West African countries","Mali only"], correct:2 },
-                { id:10, type:"saq", text:"Define globalization.", answer:["increasing interconnectedness of the world"] },
-                { id:11, type:"mcq", text:"The capital of Canada is:", options:["Toronto","Ottawa","Vancouver","Montreal"], correct:1 },
-                { id:12, type:"mcq", text:"Which element is diamond made of?", options:["Oxygen","Carbon","Silicon","Nitrogen"], correct:1 },
-                { id:13, type:"saq", text:"What does HTTP stand for?", answer:["hypertext transfer protocol"] },
-                { id:14, type:"mcq", text:"The UN was founded in:", options:["1945","1919","1939","1950"], correct:0 },
-                { id:15, type:"saq", text:"Mention one function of the liver.", answer:["detoxification","bile production","metabolism"] },
-                { id:16, type:"mcq", text:"Which gas do plants absorb?", options:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"], correct:2 },
-                { id:17, type:"mcq", text:"The currency of the United Kingdom is:", options:["Euro","Dollar","Pound Sterling","Yen"], correct:2 },
-                { id:18, type:"saq", text:"Name the longest river in the world.", answer:["Nile","the Nile"] },
-                { id:19, type:"mcq", text:"Who painted the Mona Lisa?", options:["Van Gogh","Da Vinci","Picasso","Michelangelo"], correct:1 },
-                { id:20, type:"saq", text:"What is the boiling point of water in Celsius?", answer:["100","100°C"] }
-            ]
-        };
+<!-- ═══ RESULTS ═══ -->
+<div class="screen" id="resultsScreen">
+  <div class="result-card anim">
+    <div class="result-icon" id="resIcon">🎉</div>
+    <div class="result-score" id="resScore">—</div>
+    <div class="result-label">Total Score</div>
+    <div class="result-grid" id="resGrid"></div>
+    <div class="sub-breakdown" id="resBreakdown"></div>
+    <button class="btn btn-primary" onclick="location.reload()">✓ Done</button>
+  </div>
+</div>
 
-        const state = {
-            candidate: null,
-            selectedSubjects: [],
-            allQuestions: [],
-            currentIndex: 0,
-            answers: {},
-            violations: 0,
-            examStartTime: null,
-            timerInterval: null,
-            timeRemaining: EXAM_DURATION_SEC,
-            faceLandmarker: null,
-            cameraStream: null,
-            examSubmitted: false
-        };
+<!-- ═══ CALCULATOR ═══ -->
+<div id="calcWrap">
+  <div class="calc-head"><span>Calculator</span><span style="cursor:pointer;" id="btnCloseCalc">✕</span></div>
+  <div class="calc-display" id="calcDisp">0</div>
+  <div class="calc-grid" id="calcGrid"></div>
+</div>
 
-        const $ = s => document.querySelector(s);
-        const candidateLogin = $('#candidateLogin');
-        const preExamScreen = $('#preExamScreen');
-        const examScreen = $('#examScreen');
-        const resultsScreen = $('#resultsScreen');
-        const calcFloat = $('#calcFloat');
+<script type="module">
+// ─────────────────────────────────────────────
+//  CONFIGURATION
+// ─────────────────────────────────────────────
+const VALID_PIN = 'CBT2024';
+const ADMIN_PIN = 'ADMIN2024';
+const MAX_VIOLATIONS = 3;
+const EXAM_SECS = 60 * 60;
+// ── PASTE YOUR ADMIN DASHBOARD URL HERE ──────
+const ADMIN_DASHBOARD_URL = 'admin_dashboard.html'; // same folder, or full URL when deployed
 
-        // Multi-select initialization
-        function initMultiSelect() {
-            const container = $('#subjectMultiSelect');
-            const tagsDiv = $('#subjectTags');
-            const dropdown = $('#subjectDropdown');
-            const searchInput = $('#subjectSearch');
-            const optionsDiv = $('#subjectOptions');
-            let selected = [];
-            const allSubjects = Object.keys(questionBank);
+// ─────────────────────────────────────────────
+//  QUESTION BANK
+// ─────────────────────────────────────────────
+const QB = {
+  "Mathematics": [
+    {id:"m1",type:"mcq",text:"Solve for x: 2x + 5 = 15",opts:["x = 3","x = 5","x = 7","x = 10"],ans:1},
+    {id:"m2",type:"mcq",text:"Find the area of a circle with radius 7 cm. (Take π = 22/7)",opts:["154 cm²","144 cm²","164 cm²","134 cm²"],ans:0},
+    {id:"m3",type:"saq",text:"Expand and simplify: (a + b)²",accept:["a²+2ab+b²","a^2+2ab+b^2","a² + 2ab + b²"]},
+    {id:"m4",type:"mcq",text:"If f(x) = 3x − 2, find f(4).",opts:["8","10","12","14"],ans:1},
+    {id:"m5",type:"saq",text:"Simplify: √64",accept:["8"]},
+    {id:"m6",type:"mcq",text:"The sum of interior angles of a triangle is:",opts:["90°","180°","270°","360°"],ans:1},
+    {id:"m7",type:"mcq",text:"Factorise completely: x² − 9",opts:["(x − 3)(x + 3)","(x − 9)(x + 1)","(x − 3)²","(x + 9)(x − 1)"],ans:0},
+    {id:"m8",type:"saq",text:"State the value of π correct to 2 decimal places.",accept:["3.14"]},
+    {id:"m9",type:"mcq",text:"Solve: 3y − 7 = 2y + 3",opts:["y = 10","y = 4","y = −4","y = 0"],ans:0},
+    {id:"m10",type:"mcq",text:"What is the perimeter of a rectangle of length 8 cm and width 5 cm?",opts:["26 cm","40 cm","13 cm","20 cm"],ans:0},
+    {id:"m11",type:"saq",text:"Convert 0.75 to a fraction in its lowest terms.",accept:["3/4"]},
+    {id:"m12",type:"mcq",text:"If a = 2 and b = 3, evaluate: a² + b²",opts:["13","10","5","12"],ans:0},
+    {id:"m13",type:"mcq",text:"Which of the following is a prime number?",opts:["15","21","23","27"],ans:2},
+    {id:"m14",type:"saq",text:"Simplify: 2(3x − 4) + 5",accept:["6x-3","6x − 3","6x - 3"]},
+    {id:"m15",type:"mcq",text:"Find the mean of: 2, 4, 6, 8, 10",opts:["5","6","7","8"],ans:1},
+    {id:"m16",type:"mcq",text:"Find the next term in the sequence: 2, 4, 8, 16, ___",opts:["24","32","30","20"],ans:1},
+    {id:"m17",type:"saq",text:"Write 25% as a decimal.",accept:["0.25"]},
+    {id:"m18",type:"mcq",text:"If the diameter of a circle is 14 cm, its radius is:",opts:["28 cm","7 cm","14 cm","21 cm"],ans:1},
+    {id:"m19",type:"mcq",text:"Solve: x ÷ 5 = 4",opts:["20","9","1","0.8"],ans:0},
+    {id:"m20",type:"saq",text:"Express 500 in standard form (scientific notation).",accept:["5×10²","5*10^2","5x10^2","5 × 10²"]}
+  ],
+  "English Language": [
+    {id:"e1",type:"mcq",text:"Choose the correct verb: Neither the teacher nor the students ___ present at the assembly.",opts:["was","were","are","is"],ans:1},
+    {id:"e2",type:"saq",text:"Give ONE synonym of the word 'happy'.",accept:["joyful","glad","cheerful","content","elated","pleased"]},
+    {id:"e3",type:"mcq",text:"What is the past tense of the verb 'go'?",opts:["goed","went","gone","going"],ans:1},
+    {id:"e4",type:"saq",text:"Complete the proverb: 'All that glitters is not ___.'",accept:["gold"]},
+    {id:"e5",type:"mcq",text:"Which of the following words is an adjective?",opts:["quickly","beautiful","run","and"],ans:1},
+    {id:"e6",type:"mcq",text:"The idiomatic expression 'kick the bucket' means:",opts:["to dance","to die","to start afresh","to play football"],ans:1},
+    {id:"e7",type:"saq",text:"Write the plural form of the noun 'child'.",accept:["children"]},
+    {id:"e8",type:"mcq",text:"Which of the following spellings is correct?",opts:["recieve","receive","receve","reseive"],ans:1},
+    {id:"e9",type:"saq",text:"Give ONE antonym of the word 'brave'.",accept:["cowardly","timid","fearful","coward"]},
+    {id:"e10",type:"mcq",text:"Identify the figure of speech in: 'She is as busy as a bee.'",opts:["Metaphor","Simile","Personification","Irony"],ans:1},
+    {id:"e11",type:"saq",text:"Correct the grammatical error: 'He don't like apples.'",accept:["He doesn't like apples.","he doesn't like apples"]},
+    {id:"e12",type:"mcq",text:"Which of these words is a conjunction?",opts:["quickly","but","beautiful","under"],ans:1},
+    {id:"e13",type:"mcq",text:"The word 'unhappy' contains a:",opts:["Suffix","Prefix","Root word","Verb"],ans:1},
+    {id:"e14",type:"saq",text:"Write the comparative form of the adjective 'good'.",accept:["better"]},
+    {id:"e15",type:"mcq",text:"The moral lesson of 'The Boy Who Cried Wolf' is:",opts:["Honesty is important","Kindness pays","Bravery is rewarded","Patience is a virtue"],ans:0},
+    {id:"e16",type:"mcq",text:"Choose the correct article: ___ hour ago.",opts:["a","an","the","no article needed"],ans:1},
+    {id:"e17",type:"saq",text:"What does the word 'benevolent' mean?",accept:["kind","generous","charitable","well-meaning"]},
+    {id:"e18",type:"mcq",text:"Which of the following sentences is grammatically correct?",opts:["He go to school.","He goes to school.","He going to school.","He gone to school."],ans:1},
+    {id:"e19",type:"mcq",text:"In the sentence 'She sings beautifully', the word 'beautifully' is a/an:",opts:["Adjective","Adverb","Noun","Conjunction"],ans:1},
+    {id:"e20",type:"mcq",text:"A group of sheep is collectively called a:",opts:["Flock","Herd","Pack","School"],ans:0}
+  ],
+  "Physics": [
+    {id:"p1",type:"mcq",text:"What is the SI unit of force?",opts:["Joule","Newton","Watt","Pascal"],ans:1},
+    {id:"p2",type:"saq",text:"State Ohm's Law.",accept:["V=IR","V = IR","voltage equals current times resistance","the current through a conductor is proportional to the voltage"]},
+    {id:"p3",type:"mcq",text:"Which type of mirror is used as a rear-view mirror in vehicles?",opts:["Concave","Convex","Plane","Cylindrical"],ans:1},
+    {id:"p4",type:"mcq",text:"The approximate speed of light in a vacuum is:",opts:["3×10⁸ m/s","3×10⁶ m/s","300 m/s","3×10¹⁰ m/s"],ans:0},
+    {id:"p5",type:"saq",text:"Define acceleration.",accept:["rate of change of velocity","change in velocity per unit time"]},
+    {id:"p6",type:"mcq",text:"Which device converts electrical energy into mechanical energy?",opts:["Electric motor","Generator","Battery","Resistor"],ans:0},
+    {id:"p7",type:"mcq",text:"An object of mass 5 kg moving at 2 m/s has kinetic energy of:",opts:["10 J","20 J","5 J","4 J"],ans:0},
+    {id:"p8",type:"saq",text:"Write the formula for the weight of an object.",accept:["W=mg","W = mg","weight = mass × gravity"]},
+    {id:"p9",type:"mcq",text:"What is the SI unit of electric current?",opts:["Volt","Ampere","Ohm","Coulomb"],ans:1},
+    {id:"p10",type:"saq",text:"State the principle of conservation of energy.",accept:["energy cannot be created or destroyed","energy is neither created nor destroyed","total energy in an isolated system remains constant"]},
+    {id:"p11",type:"mcq",text:"Which colour of visible light has the longest wavelength?",opts:["Violet","Blue","Green","Red"],ans:3},
+    {id:"p12",type:"mcq",text:"A magnet always has ___ poles.",opts:["one","two","three","four"],ans:1},
+    {id:"p13",type:"saq",text:"What does LED stand for?",accept:["light emitting diode","Light Emitting Diode"]},
+    {id:"p14",type:"mcq",text:"The gravitational pull of the earth on a body is called its:",opts:["Mass","Weight","Inertia","Momentum"],ans:1},
+    {id:"p15",type:"mcq",text:"In which medium does sound travel fastest?",opts:["Air","Water","Vacuum","Steel"],ans:3},
+    {id:"p16",type:"saq",text:"Convert 1 km to metres.",accept:["1000","1000 m","1000 metres","1000 meters"]},
+    {id:"p17",type:"mcq",text:"A lens that converges parallel rays of light is called a ___ lens.",opts:["Concave","Convex","Plano","Diverging"],ans:1},
+    {id:"p18",type:"mcq",text:"The boiling point of pure water at sea level is:",opts:["90 °C","100 °C","110 °C","120 °C"],ans:1},
+    {id:"p19",type:"saq",text:"Define work done.",accept:["force times distance","force × distance","W = Fd","product of force and distance in the direction of motion"]},
+    {id:"p20",type:"mcq",text:"Which of the following is a semiconductor?",opts:["Copper","Glass","Silicon","Rubber"],ans:2}
+  ],
+  "General Paper": [
+    {id:"g1",type:"mcq",text:"Who is the current UN Secretary-General?",opts:["António Guterres","Ban Ki-moon","Kofi Annan","Boutros Boutros-Ghali"],ans:0},
+    {id:"g2",type:"saq",text:"What does UNESCO stand for?",accept:["United Nations Educational, Scientific and Cultural Organization","united nations educational scientific and cultural organization"]},
+    {id:"g3",type:"mcq",text:"Which country won the 2022 FIFA World Cup?",opts:["France","Brazil","Argentina","Germany"],ans:2},
+    {id:"g4",type:"mcq",text:"The largest continent by land area is:",opts:["Africa","Asia","Europe","North America"],ans:1},
+    {id:"g5",type:"saq",text:"Who was the first President of Nigeria?",accept:["Nnamdi Azikiwe","Dr. Nnamdi Azikiwe","Benjamin Nnamdi Azikiwe"]},
+    {id:"g6",type:"mcq",text:"Which planet in our solar system is known as the Red Planet?",opts:["Venus","Mars","Jupiter","Saturn"],ans:1},
+    {id:"g7",type:"mcq",text:"What is the chemical symbol for gold?",opts:["Ag","Au","Fe","Cu"],ans:1},
+    {id:"g8",type:"saq",text:"In what year did Nigeria gain independence?",accept:["1960"]},
+    {id:"g9",type:"mcq",text:"Through which countries does the River Niger flow?",opts:["Nigeria only","Nigeria and Niger","Several West African countries","Mali only"],ans:2},
+    {id:"g10",type:"saq",text:"Define globalisation in one sentence.",accept:["the increasing integration of economies and societies","increasing interconnectedness of the world","the process of increased international trade and cultural exchange"]},
+    {id:"g11",type:"mcq",text:"The capital city of Canada is:",opts:["Toronto","Ottawa","Vancouver","Montreal"],ans:1},
+    {id:"g12",type:"mcq",text:"Diamond is composed entirely of which element?",opts:["Oxygen","Carbon","Silicon","Nitrogen"],ans:1},
+    {id:"g13",type:"saq",text:"What does HTTP stand for?",accept:["HyperText Transfer Protocol","hypertext transfer protocol","Hypertext Transfer Protocol"]},
+    {id:"g14",type:"mcq",text:"The United Nations was founded in the year:",opts:["1945","1919","1939","1950"],ans:0},
+    {id:"g15",type:"saq",text:"State ONE function of the human liver.",accept:["detoxification","bile production","metabolism","storage of glycogen","produces bile","filters blood"]},
+    {id:"g16",type:"mcq",text:"Which gas do plants absorb during photosynthesis?",opts:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],ans:2},
+    {id:"g17",type:"mcq",text:"The official currency of the United Kingdom is:",opts:["Euro","US Dollar","Pound Sterling","Yen"],ans:2},
+    {id:"g18",type:"saq",text:"Name the longest river in the world.",accept:["Nile","The Nile","Nile River"]},
+    {id:"g19",type:"mcq",text:"Which famous artist painted the Mona Lisa?",opts:["Vincent van Gogh","Leonardo da Vinci","Pablo Picasso","Michelangelo"],ans:1},
+    {id:"g20",type:"saq",text:"At what temperature (in °C) does pure water boil at sea level?",accept:["100","100°C","100 °C"]}
+  ]
+};
 
-            function renderOptions(filter='') {
-                optionsDiv.innerHTML = '';
-                allSubjects.filter(s => s.toLowerCase().includes(filter.toLowerCase())).forEach(sub => {
-                    const div = document.createElement('div'); div.className='option';
-                    const checked = selected.includes(sub);
-                    div.innerHTML = `<input type="checkbox" ${checked?'checked':''}> ${sub}`;
-                    div.querySelector('input').addEventListener('change', (e) => {
-                        if(e.target.checked) {
-                            if(selected.length>=4) { e.target.checked=false; return; }
-                            selected.push(sub);
-                        } else { selected = selected.filter(s=>s!==sub); }
-                        updateTags(); renderOptions(searchInput.value);
-                    });
-                    optionsDiv.appendChild(div);
-                });
-            }
-            function updateTags() {
-                tagsDiv.innerHTML = '';
-                if(!selected.length) tagsDiv.innerHTML = '<span style="color:#94a3b8;">Click to select subjects...</span>';
-                else selected.forEach(sub => {
-                    const tag = document.createElement('span'); tag.className='tag';
-                    tag.innerHTML = `${sub} <span class="remove" data-sub="${sub}">✕</span>`;
-                    tag.querySelector('.remove').addEventListener('click', e => {
-                        e.stopPropagation(); selected = selected.filter(s=>s!==sub);
-                        updateTags(); renderOptions(searchInput.value);
-                    });
-                    tagsDiv.appendChild(tag);
-                });
-                state.selectedSubjects = selected;
-            }
-            tagsDiv.addEventListener('click', ()=>{ dropdown.classList.toggle('open'); renderOptions(); });
-            searchInput.addEventListener('input', e => renderOptions(e.target.value));
-            document.addEventListener('click', e => { if(!container.contains(e.target)) dropdown.classList.remove('open'); });
-            renderOptions(); updateTags();
-        }
+const CALC_SUBJECTS = ["Mathematics","Physics"];
+const ALL_SUBJECTS = Object.keys(QB);
 
-        // Login
-        document.getElementById('candidateForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            if(state.selectedSubjects.length < 3) return alert('Please select at least 3 subjects.');
-            if($('#examPin').value !== VALID_PIN) return alert('Invalid exam PIN.');
-            state.candidate = {
-                name: $('#fullName').value.trim(), email: $('#email').value.trim(),
-                nin: $('#nin').value.trim(), phone: $('#phone').value.trim()
-            };
-            state.allQuestions = [];
-            state.selectedSubjects.forEach(sub => {
-                state.allQuestions.push(...questionBank[sub].map(q => ({...q, subject:sub})));
-            });
-            state.currentIndex = 0; state.answers = {}; state.violations = 0;
-            state.timeRemaining = EXAM_DURATION_SEC;
-            showPreExamCheck();
-        });
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+const S = {
+  candidate: null, selected: [], questions: [],
+  idx: 0, answers: {}, violations: 0,
+  timeLeft: EXAM_SECS, timer: null,
+  stream: null, faceLandmarker: null,
+  submitted: false, procEvents: []
+};
 
-        function showPreExamCheck() {
-            preExamScreen.innerHTML = `
-                <div style="max-width:600px;margin:40px auto;background:#fff;padding:30px;border-radius:20px;">
-                    <h2>Pre-Exam System Check</h2>
-                    <ul class="checklist" id="checklist">
-                        <li id="checkCamera"><span>📷</span> Camera <span class="status-icon">⏳</span></li>
-                        <li id="checkMic"><span>🎤</span> Microphone <span class="status-icon">⏳</span></li>
-                        <li id="checkFullscreen"><span>🖥️</span> Fullscreen <span class="status-icon">⏳</span></li>
-                    </ul>
-                    <div class="camera-preview-box"><video id="previewVideo" autoplay muted playsinline></video></div>
-                    <button class="btn btn-outline btn-sm" id="requestCamera">Request Camera</button>
-                    <button class="btn btn-outline btn-sm" id="requestFullscreen">Enter Fullscreen</button>
-                    <label style="display:block;margin-top:16px;"><input type="checkbox" id="agreeRules"> I agree to exam rules.</label>
-                    <button class="btn btn-primary" id="startExamBtn" disabled>Start Exam</button>
-                </div>`;
-            candidateLogin.classList.remove('active');
-            preExamScreen.classList.add('active');
+// ─────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+function toast(msg){ const d=document.createElement('div'); d.className='v-toast'; d.textContent=msg; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
+function setCheck(id,state){ const el=$(id); el.querySelector('.ci-status').textContent=state==='pass'?'✅':state==='fail'?'❌':'⏳'; el.classList.toggle('pass',state==='pass'); el.classList.toggle('fail',state==='fail'); }
 
-            const video = $('#previewVideo');
-            document.getElementById('requestCamera').addEventListener('click', async () => {
-                try {
-                    state.cameraStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-                    video.srcObject = state.cameraStream;
-                    document.getElementById('checkCamera').classList.add('passed');
-                    document.getElementById('checkCamera').querySelector('.status-icon').textContent='✅';
-                    document.getElementById('checkMic').classList.add('passed');
-                    document.getElementById('checkMic').querySelector('.status-icon').textContent='✅';
-                } catch(e) { alert('Camera/Mic access denied.'); }
-                checkAll();
-            });
-            document.getElementById('requestFullscreen').addEventListener('click', ()=>{
-                if(document.fullscreenEnabled) document.documentElement.requestFullscreen();
-                else alert('Fullscreen not supported.');
-            });
-            document.addEventListener('fullscreenchange', ()=>{
-                const fsEl = document.getElementById('checkFullscreen');
-                if(document.fullscreenElement) {
-                    fsEl.classList.add('passed'); fsEl.querySelector('.status-icon').textContent='✅';
-                } else {
-                    fsEl.classList.remove('passed'); fsEl.querySelector('.status-icon').textContent='❌';
-                }
-                checkAll();
-            });
-            $('#agreeRules').addEventListener('change', checkAll);
-            function checkAll() {
-                const camOk = document.getElementById('checkCamera').classList.contains('passed');
-                const fsOk = document.getElementById('checkFullscreen').classList.contains('passed');
-                const agreed = $('#agreeRules').checked;
-                document.getElementById('startExamBtn').disabled = !(camOk && fsOk && agreed);
-            }
-            document.getElementById('startExamBtn').addEventListener('click', startExam);
-        }
+// ─────────────────────────────────────────────
+//  MULTI-SELECT
+// ─────────────────────────────────────────────
+const msWrap=$('msWrap'), msBox=$('msBox'), msDropdown=$('msDropdown'), msSearch=$('msSearch'), msOpts=$('msOpts');
+let msSelected=[];
+function renderMsOpts(filter=''){
+  msOpts.innerHTML='';
+  ALL_SUBJECTS.filter(s=>s.toLowerCase().includes(filter.toLowerCase())).forEach(sub=>{
+    const chk=msSelected.includes(sub);
+    const dis=!chk&&msSelected.length>=4;
+    const d=document.createElement('div');
+    d.className='ms-opt'+(chk?' checked':'')+(dis?' disabled':'');
+    d.innerHTML=`<span class="cb"></span>${sub}`;
+    if(!dis) d.addEventListener('click',()=>{
+      if(chk) msSelected=msSelected.filter(s=>s!==sub);
+      else if(msSelected.length<4) msSelected.push(sub);
+      renderMsOpts(msSearch.value); renderMsTags();
+    });
+    msOpts.appendChild(d);
+  });
+}
+function renderMsTags(){
+  msBox.innerHTML='';
+  if(!msSelected.length){ msBox.innerHTML='<span class="ms-placeholder">Click to select subjects…</span>'; }
+  else{
+    msSelected.forEach(sub=>{
+      const t=document.createElement('span'); t.className='ms-tag';
+      t.innerHTML=`${sub} <span class="x" data-s="${sub}">✕</span>`;
+      t.querySelector('.x').addEventListener('click',e=>{ e.stopPropagation(); msSelected=msSelected.filter(s=>s!==sub); renderMsOpts(msSearch.value); renderMsTags(); });
+      msBox.appendChild(t);
+    });
+    const c=document.createElement('span'); c.className='ms-count'; c.textContent=`${msSelected.length}/4`; msBox.appendChild(c);
+  }
+  S.selected=msSelected;
+}
+msBox.addEventListener('click',()=>{ msDropdown.classList.toggle('open'); renderMsOpts(); });
+msSearch.addEventListener('input',e=>renderMsOpts(e.target.value));
+document.addEventListener('click',e=>{ if(!msWrap.contains(e.target)) msDropdown.classList.remove('open'); });
+renderMsOpts(); renderMsTags();
 
-        function startExam() {
-            preExamScreen.classList.remove('active');
-            examScreen.classList.add('active');
-            state.examStartTime = Date.now();
-            state.violations = 0; updateViolationCounter();
-            updateTimer();
-            state.timerInterval = setInterval(() => {
-                state.timeRemaining--;
-                updateTimer();
-                if(state.timeRemaining <= 0) submitExam(true);
-            }, 1000);
-            updateCalculatorVisibility();
-            renderQuestion();
-            startProctoring();
-        }
+// ─────────────────────────────────────────────
+//  LOGIN
+// ─────────────────────────────────────────────
+$('btnLogin').addEventListener('click',()=>{
+  const name=$('iName').value.trim(), email=$('iEmail').value.trim(), nin=$('iNin').value.trim(), phone=$('iPhone').value.trim(), pin=$('iPin').value;
+  if(!name||!email||!nin||!phone) return alert('Please fill in all fields.');
+  if(S.selected.length<3) return alert('Please select at least 3 subjects.');
+  if(pin!==VALID_PIN) return alert('Invalid exam PIN. Please check and try again.');
+  S.candidate={name,email,nin,phone};
+  S.questions=[]; S.selected.forEach(sub=>QB[sub].forEach(q=>S.questions.push({...q,subject:sub})));
+  S.answers={}; S.violations=0; S.idx=0; S.timeLeft=EXAM_SECS; S.procEvents=[];
+  show('preExamScreen');
+});
 
-        function updateTimer() {
-            const mins = Math.floor(state.timeRemaining/60);
-            const secs = state.timeRemaining%60;
-            $('#examTimer').textContent = `⏱ ${mins}:${secs.toString().padStart(2,'0')}`;
-        }
+// ─────────────────────────────────────────────
+//  PRE-EXAM CHECK
+// ─────────────────────────────────────────────
+let camOk=false, fsOk=false, faceOk=false;
+function evalStart(){ $('btnStartExam').disabled=!(camOk&&fsOk&&$('agreeChk').checked); }
 
-        function updateCalculatorVisibility() {
-            const q = state.allQuestions[state.currentIndex];
-            const show = ['Mathematics','Physics'].includes(q.subject);
-            document.getElementById('toggleCalculator').style.display = show ? 'inline-flex' : 'none';
-            $('#currentSubjectLabel').textContent = q.subject;
-        }
+$('btnReqCam').addEventListener('click',async()=>{
+  try{
+    S.stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    $('previewVid').srcObject=S.stream;
+    camOk=true; setCheck('chkCam','pass'); setCheck('chkMic','pass');
+    // start face check
+    await initFaceForCheck();
+  } catch(e){ setCheck('chkCam','fail'); setCheck('chkMic','fail'); alert('Camera/Mic access denied.'); }
+  evalStart();
+});
 
-        function renderQuestion() {
-            const q = state.allQuestions[state.currentIndex];
-            const container = $('#questionContainer');
-            const prev = state.currentIndex>0 ? state.allQuestions[state.currentIndex-1].subject : null;
-            let html = '';
-            if(q.subject !== prev) html += `<div class="subject-header">${q.subject}</div>`;
-            html += `<p><strong>Q${state.currentIndex+1}.</strong> ${q.text}</p>`;
-            if(q.type === 'mcq') {
-                html += '<div class="options">';
-                q.options.forEach((opt,i) => {
-                    const checked = state.answers[q.id] === i ? 'checked' : '';
-                    html += `<label style="display:block;margin:8px 0;"><input type="radio" name="opt" value="${i}" ${checked}> ${opt}</label>`;
-                });
-                html += '</div>';
-            } else {
-                const val = state.answers[q.id] || '';
-                html += `<input type="text" class="saq-input" id="saqInput" value="${val}" placeholder="Type your answer">`;
-            }
-            container.innerHTML = html;
-            if(q.type === 'mcq') {
-                document.querySelectorAll('input[name="opt"]').forEach(r => {
-                    r.addEventListener('change', (e) => state.answers[q.id] = parseInt(e.target.value));
-                });
-            } else {
-                document.getElementById('saqInput').addEventListener('input', e => state.answers[q.id] = e.target.value.trim());
-            }
-            updateCalculatorVisibility();
-        }
+async function initFaceForCheck(){
+  try{
+    const {FaceLandmarker,FilesetResolver}=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/dist/vision_bundle.mjs');
+    const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
+    S.faceLandmarker=await FaceLandmarker.createFromOptions(vision,{
+      baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",delegate:"GPU"},
+      runningMode:"VIDEO",numFaces:2
+    });
+    const vid=$('previewVid');
+    let checked=false;
+    const checkFace=()=>{
+      if(!S.faceLandmarker||!vid.videoWidth) { if(!checked) requestAnimationFrame(checkFace); return; }
+      const res=S.faceLandmarker.detectForVideo(vid,performance.now());
+      if(res.faceLandmarks.length===1){ faceOk=true; setCheck('chkFace','pass'); evalStart(); }
+      else if(!checked){ setTimeout(checkFace,500); }
+    };
+    vid.addEventListener('loadeddata',checkFace,{once:true});
+    if(vid.readyState>=2) checkFace();
+  } catch(e){ console.warn('MediaPipe not loaded',e); faceOk=true; setCheck('chkFace','pass'); evalStart(); }
+}
 
-        document.getElementById('prevQuestion').addEventListener('click', ()=>{
-            if(state.currentIndex>0) { state.currentIndex--; renderQuestion(); }
-        });
-        document.getElementById('nextQuestion').addEventListener('click', ()=>{
-            if(state.currentIndex < state.allQuestions.length-1) { state.currentIndex++; renderQuestion(); }
-        });
-        document.getElementById('saveAnswer').addEventListener('click', ()=> alert('Answer saved!'));
-        document.getElementById('submitExam').addEventListener('click', ()=>{
-            if(confirm('Submit exam?')) submitExam(false);
-        });
+$('btnReqFs').addEventListener('click',()=>{
+  if(document.fullscreenEnabled) document.documentElement.requestFullscreen().catch(()=>{});
+});
+document.addEventListener('fullscreenchange',()=>{
+  fsOk=!!document.fullscreenElement;
+  setCheck('chkFs',fsOk?'pass':'fail'); evalStart();
+});
+$('agreeChk').addEventListener('change',evalStart);
+$('btnStartExam').addEventListener('click',startExam);
 
-        // Calculator
-        document.getElementById('toggleCalculator').addEventListener('click', ()=> calcFloat.style.display = calcFloat.style.display==='block'?'none':'block');
-        document.getElementById('closeCalc').addEventListener('click', ()=> calcFloat.style.display='none');
-        const calcBtns = ['C','⌫','%','/','7','8','9','*','4','5','6','-','1','2','3','+','0','.','π','='];
-        const calcBtnsDiv = document.getElementById('calcButtons');
-        calcBtns.forEach(label => {
-            const btn = document.createElement('button'); btn.textContent = label;
-            btn.style.cssText = 'padding:12px;border:1px solid #ddd;background:#f9fafb;cursor:pointer;';
-            btn.addEventListener('click', ()=> handleCalc(label));
-            calcBtnsDiv.appendChild(btn);
-        });
-        let calcExpr = '';
-        function handleCalc(key) {
-            if(key==='C') calcExpr='';
-            else if(key==='⌫') calcExpr=calcExpr.slice(0,-1);
-            else if(key==='=') { try { calcExpr = eval(calcExpr).toString(); } catch { calcExpr='Error'; } }
-            else if(key==='π') calcExpr += Math.PI;
-            else calcExpr += key;
-            document.getElementById('calcDisplay').textContent = calcExpr || '0';
-        }
+// ─────────────────────────────────────────────
+//  EXAM START
+// ─────────────────────────────────────────────
+function startExam(){
+  show('examScreen');
+  buildQGrid();
+  renderQ();
+  startTimer();
+  startProctoring();
+  document.addEventListener('visibilitychange',onVisibility);
+  document.addEventListener('keydown',onKeydown);
+}
 
-        // AI Proctoring
-        async function startProctoring() {
-            if(!state.cameraStream) return;
-            const video = document.createElement('video');
-            video.srcObject = state.cameraStream; video.play();
-            const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
-            state.faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-                baseOptions: {
-                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-                    delegate: "GPU"
-                },
-                runningMode: "VIDEO", numFaces: 2
-            });
-            let lastTime = performance.now();
-            async function detect() {
-                if(!state.faceLandmarker || !state.examStartTime) return;
-                const now = performance.now();
-                if(now - lastTime < 200) { requestAnimationFrame(detect); return; }
-                lastTime = now;
-                const results = state.faceLandmarker.detectForVideo(video, now);
-                if(results.faceLandmarks.length === 0) handleViolation("No face detected");
-                else if(results.faceLandmarks.length > 1) handleViolation("Multiple faces");
-                else {
-                    const nose = results.faceLandmarks[0][1];
-                    if(nose.x < 0.35) handleViolation("Looking left");
-                    else if(nose.x > 0.65) handleViolation("Looking right");
-                }
-                requestAnimationFrame(detect);
-            }
-            detect();
-        }
+function startTimer(){
+  S.timer=setInterval(()=>{
+    S.timeLeft--;
+    const m=Math.floor(S.timeLeft/60), s=S.timeLeft%60;
+    const t=$('ebTimer');
+    t.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    t.className='eb-timer'+(S.timeLeft<=300?' danger':S.timeLeft<=600?' warn':'');
+    if(S.timeLeft<=0) submitExam(true,'Timer expired');
+  },1000);
+}
 
-        function handleViolation(reason) {
-            if(state.examSubmitted) return;
-            state.violations++;
-            updateViolationCounter();
-            const toast = document.createElement('div');
-            toast.className = 'violation-toast show';
-            toast.textContent = `⚠️ ${reason} (${state.violations}/${MAX_VIOLATIONS})`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-            if(state.violations >= MAX_VIOLATIONS) submitExam(true);
-        }
+function onVisibility(){
+  if(document.hidden) violation('Tab switch detected');
+}
+function onKeydown(e){
+  if(e.key==='Escape'||e.altKey||e.ctrlKey||e.metaKey) violation('Keyboard shortcut blocked');
+}
 
-        function updateViolationCounter() {
-            document.getElementById('violationCounter').textContent = `⚠️ ${state.violations}/${MAX_VIOLATIONS}`;
-        }
+// ─────────────────────────────────────────────
+//  RENDER QUESTION
+// ─────────────────────────────────────────────
+function renderQ(){
+  const q=S.questions[S.idx];
+  const body=$('examBody');
+  let html='';
+  // subject heading when subject changes
+  if(S.idx===0||S.questions[S.idx-1].subject!==q.subject){
+    const cnt=S.questions.filter(x=>x.subject===q.subject).length;
+    html+=`<div class="subject-heading"><h3>${q.subject}</h3><span class="sq">${cnt} questions</span></div>`;
+  }
+  const saved=S.answers[q.id];
+  const typeLabel=q.type==='mcq'?'MCQ':'Short Answer';
+  const typeCls=q.type==='mcq'?'badge-mcq':'badge-saq';
+  html+=`<div class="q-card current">
+    <div class="q-num">Question ${S.idx+1} of ${S.questions.length}</div>
+    <span class="q-type-badge ${typeCls}">${typeLabel}</span>
+    <div class="q-text">${q.text}</div>`;
+  if(q.type==='mcq'){
+    html+='<div class="opts">';
+    q.opts.forEach((o,i)=>{
+      const sel=saved===i?' selected':'';
+      html+=`<label class="opt-label${sel}"><input type="radio" name="mq" value="${i}"${saved===i?' checked':''}> ${String.fromCharCode(65+i)}. ${o}</label>`;
+    });
+    html+='</div>';
+  } else {
+    html+=`<input class="saq-input" id="saqIn" type="text" placeholder="Type your answer here…" value="${saved||''}">`;
+  }
+  html+='</div>';
+  body.innerHTML=html;
 
-        function submitExam(auto=false) {
-            if(state.examSubmitted) return;
-            state.examSubmitted = true;
-            clearInterval(state.timerInterval);
-            if(state.cameraStream) state.cameraStream.getTracks().forEach(t=>t.stop());
-            if(document.fullscreenElement) document.exitFullscreen();
-            const subjects = [...new Set(state.allQuestions.map(q=>q.subject))];
-            const subjectResults = {};
-            subjects.forEach(sub => subjectResults[sub] = {mcqCorrect:0,mcqTotal:0,saqCorrect:0,saqTotal:0});
-            state.allQuestions.forEach(q => {
-                const ans = state.answers[q.id];
-                if(q.type==='mcq') {
-                    subjectResults[q.subject].mcqTotal++;
-                    if(ans===q.correct) subjectResults[q.subject].mcqCorrect++;
-                } else {
-                    subjectResults[q.subject].saqTotal++;
-                    if(ans && q.answer.some(a=>a.toLowerCase()===ans.toLowerCase())) subjectResults[q.subject].saqCorrect++;
-                }
-            });
-            const totalMCQ = Object.values(subjectResults).reduce((a,b)=>a+b.mcqCorrect,0);
-            const totalMCQAll = Object.values(subjectResults).reduce((a,b)=>a+b.mcqTotal,0);
-            const totalSAQ = Object.values(subjectResults).reduce((a,b)=>a+b.saqCorrect,0);
-            const totalSAQAll = Object.values(subjectResults).reduce((a,b)=>a+b.saqTotal,0);
-            const timeUsed = Math.round((EXAM_DURATION_SEC - state.timeRemaining)/60);
-            const result = {
-                ...state.candidate,
-                subjects: subjects.join(', '),
-                mcqScore: `${totalMCQ}/${totalMCQAll}`,
-                saqScore: `${totalSAQ}/${totalSAQAll}`,
-                totalScore: `${totalMCQ+totalSAQ}/${totalMCQAll+totalSAQAll}`,
-                violations: state.violations,
-                timeUsed: timeUsed,
-                subjectBreakdown: subjectResults,
-                date: new Date().toLocaleString()
-            };
-            const all = JSON.parse(localStorage.getItem('examResults')||'[]');
-            all.push(result);
-            localStorage.setItem('examResults', JSON.stringify(all));
-            examScreen.classList.remove('active');
-            resultsScreen.classList.add('active');
-            $('#resultsContent').innerHTML = `
-                <p><strong>Name:</strong> ${result.name}</p>
-                <p><strong>Subjects:</strong> ${result.subjects}</p>
-                <p><strong>MCQ Score:</strong> ${result.mcqScore}</p>
-                <p><strong>SAQ Score:</strong> ${result.saqScore}</p>
-                <p><strong>Total Score:</strong> ${result.totalScore}</p>
-                <p><strong>Violations:</strong> ${result.violations}</p>
-                <p><strong>Time Used:</strong> ${result.timeUsed} min</p>
-            `;
-        }
+  // events
+  if(q.type==='mcq'){
+    body.querySelectorAll('input[name="mq"]').forEach(r=>{
+      r.addEventListener('change',e=>{
+        S.answers[q.id]=parseInt(e.target.value);
+        body.querySelectorAll('.opt-label').forEach((l,i)=>l.classList.toggle('selected',i===parseInt(e.target.value)));
+        updateQDot(S.idx);
+      });
+    });
+  } else {
+    $('saqIn').addEventListener('input',e=>{ S.answers[q.id]=e.target.value.trim(); updateQDot(S.idx); });
+  }
 
-        initMultiSelect();
-    </script>
+  // top bar
+  $('ebSubject').textContent=q.subject;
+  $('ebQNum').textContent=`Q${S.idx+1} / ${S.questions.length}`;
+  $('btnCalc').style.display=CALC_SUBJECTS.includes(q.subject)?'inline-flex':'none';
+  $('progressFill').style.width=`${((S.idx+1)/S.questions.length)*100}%`;
+  updateQDot(S.idx);
+}
+
+// ─────────────────────────────────────────────
+//  Q GRID
+// ─────────────────────────────────────────────
+function buildQGrid(){
+  const g=$('qGrid'); g.innerHTML='';
+  S.questions.forEach((_,i)=>{
+    const d=document.createElement('div'); d.className='q-dot'; d.id=`qd${i}`; d.textContent=i+1;
+    d.addEventListener('click',()=>{ S.idx=i; renderQ(); updateAllDots(); });
+    g.appendChild(d);
+  });
+}
+function updateQDot(i){
+  const d=$(`qd${i}`); if(!d) return;
+  d.classList.toggle('current',i===S.idx);
+  d.classList.toggle('answered',S.answers[S.questions[i].id]!==undefined&&S.answers[S.questions[i].id]!=='');
+}
+function updateAllDots(){ S.questions.forEach((_,i)=>updateQDot(i)); }
+
+// ─────────────────────────────────────────────
+//  NAV
+// ─────────────────────────────────────────────
+$('btnPrev').addEventListener('click',()=>{ if(S.idx>0){ S.idx--; renderQ(); updateAllDots(); }});
+$('btnNext').addEventListener('click',()=>{ if(S.idx<S.questions.length-1){ S.idx++; renderQ(); updateAllDots(); }});
+$('btnSave').addEventListener('click',()=>{ toast('✅ Answer saved!'); });
+$('btnSubmit').addEventListener('click',()=>{ if(confirm('Are you sure you want to submit the exam? This action cannot be undone.')) submitExam(false,'Manual submit'); });
+
+// ─────────────────────────────────────────────
+//  CALCULATOR
+// ─────────────────────────────────────────────
+const calcWrap=$('calcWrap');
+$('btnCalc').addEventListener('click',()=>{ calcWrap.style.display=calcWrap.style.display==='block'?'none':'block'; });
+$('btnCloseCalc').addEventListener('click',()=>{ calcWrap.style.display='none'; });
+const CALC_BTNS=['C','⌫','%','/','7','8','9','×','4','5','6','−','1','2','3','+','0','.','π','='];
+let calcExpr='';
+CALC_BTNS.forEach(k=>{
+  const b=document.createElement('button'); b.className='calc-btn'+(k==='='?' eq':k==='C'?' clr':['/','×','−','+','%'].includes(k)?' op':'');
+  b.textContent=k;
+  b.addEventListener('click',()=>{
+    if(k==='C') calcExpr='';
+    else if(k==='⌫') calcExpr=calcExpr.slice(0,-1);
+    else if(k==='='){try{ calcExpr=String(eval(calcExpr.replace(/×/g,'*').replace(/−/g,'-'))); }catch{ calcExpr='Err'; }}
+    else if(k==='π') calcExpr+=Math.PI.toFixed(6);
+    else calcExpr+=k;
+    $('calcDisp').textContent=calcExpr||'0';
+  });
+  $('calcGrid').appendChild(b);
+});
+
+// ─────────────────────────────────────────────
+//  PROCTORING
+// ─────────────────────────────────────────────
+async function startProctoring(){
+  if(!S.stream||!S.faceLandmarker) return;
+  const vid=document.createElement('video');
+  vid.srcObject=S.stream; await vid.play();
+  let lastT=0, eyeClosedFrames=0, mouthOpenFrames=0, noFaceFrames=0;
+  const detect=()=>{
+    if(S.submitted) return;
+    const now=performance.now();
+    if(now-lastT<300){ requestAnimationFrame(detect); return; }
+    lastT=now;
+    try{
+      const r=S.faceLandmarker.detectForVideo(vid,now);
+      const n=r.faceLandmarks.length;
+      if(n===0){ noFaceFrames++; if(noFaceFrames>=5) violation('No face detected'); }
+      else{ noFaceFrames=0; }
+      if(n>1) violation('Multiple faces detected');
+      if(n>=1){
+        const lm=r.faceLandmarks[0];
+        const nose=lm[1];
+        if(nose.x<0.30) violation('Looking left');
+        else if(nose.x>0.70) violation('Looking right');
+        // up/down via nose tip vs chin
+        const chinY=lm[152]?.y, noseY=lm[1]?.y;
+        if(chinY&&noseY){ if(noseY<chinY-0.2) violation('Looking up'); else if(noseY>chinY-0.05) violation('Looking down'); }
+        // eye closed (landmark 159 upper lid vs 145 lower lid)
+        const eyeOpen=Math.abs((lm[159]?.y||0)-(lm[145]?.y||0));
+        if(eyeOpen<0.012){ eyeClosedFrames++; if(eyeClosedFrames>15) violation('Eyes closed'); } else eyeClosedFrames=0;
+        // mouth open (13=upper, 14=lower)
+        const mouthGap=Math.abs((lm[13]?.y||0)-(lm[14]?.y||0));
+        if(mouthGap>0.04){ mouthOpenFrames++; if(mouthOpenFrames>20) violation('Mouth open — possible talking'); } else mouthOpenFrames=0;
+      }
+    }catch(e){}
+    requestAnimationFrame(detect);
+  };
+  detect();
+}
+
+let lastViolTime=0;
+function violation(reason){
+  if(S.submitted) return;
+  const now=Date.now();
+  if(now-lastViolTime<2500) return; // debounce
+  lastViolTime=now;
+  S.violations++;
+  S.procEvents.push({time:new Date().toISOString(),event:reason,count:S.violations});
+  $('ebViol').textContent=`⚠ ${S.violations}/${MAX_VIOLATIONS}`;
+  toast(`⚠️ ${reason} (${S.violations}/${MAX_VIOLATIONS})`);
+  if(S.violations>=MAX_VIOLATIONS) submitExam(true,`Auto-submit: max violations (${reason})`);
+}
+
+// ─────────────────────────────────────────────
+//  SUBMIT
+// ─────────────────────────────────────────────
+function submitExam(auto=false,reason=''){
+  if(S.submitted) return;
+  S.submitted=true;
+  clearInterval(S.timer);
+  document.removeEventListener('visibilitychange',onVisibility);
+  document.removeEventListener('keydown',onKeydown);
+  if(S.stream) S.stream.getTracks().forEach(t=>t.stop());
+  if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+
+  // score
+  const bySubject={};
+  S.selected.forEach(sub=>bySubject[sub]={mcqC:0,mcqT:0,saqC:0,saqT:0});
+  S.questions.forEach(q=>{
+    const a=S.answers[q.id];
+    const sub=q.subject;
+    if(q.type==='mcq'){
+      bySubject[sub].mcqT++;
+      if(a===q.ans) bySubject[sub].mcqC++;
+    } else {
+      bySubject[sub].saqT++;
+      if(a && q.accept.some(ac=>ac.toLowerCase().trim()===String(a).toLowerCase().trim())) bySubject[sub].saqC++;
+    }
+  });
+  const totMCQ=Object.values(bySubject).reduce((t,v)=>t+v.mcqC,0);
+  const totMCQT=Object.values(bySubject).reduce((t,v)=>t+v.mcqT,0);
+  const totSAQ=Object.values(bySubject).reduce((t,v)=>t+v.saqC,0);
+  const totSAQT=Object.values(bySubject).reduce((t,v)=>t+v.saqT,0);
+  const total=totMCQ+totSAQ, totalT=totMCQT+totSAQT;
+  const pct=Math.round((total/totalT)*100);
+  const timeUsed=Math.round((EXAM_SECS-S.timeLeft)/60);
+
+  const result={
+    ...S.candidate, subjects:S.selected.join(', '),
+    mcqScore:`${totMCQ}/${totMCQT}`, saqScore:`${totSAQ}/${totSAQT}`,
+    totalScore:`${total}/${totalT}`, pct, violations:S.violations,
+    timeUsed, bySubject, procEvents:S.procEvents,
+    autoSubmit:auto, submitReason:reason,
+    date:new Date().toLocaleString()
+  };
+
+  const all=JSON.parse(localStorage.getItem('uniCBT_results')||'[]');
+  all.push(result); localStorage.setItem('uniCBT_results',JSON.stringify(all));
+
+  // show results
+  show('resultsScreen');
+  $('resIcon').textContent=pct>=50?'🎉':'📋';
+  $('resScore').textContent=`${total}/${totalT}`;
+  $('resGrid').innerHTML=`
+    <div class="rg-item"><div class="rg-label">MCQ Score</div><div class="rg-val">${result.mcqScore}</div></div>
+    <div class="rg-item"><div class="rg-label">SAQ Score</div><div class="rg-val">${result.saqScore}</div></div>
+    <div class="rg-item"><div class="rg-label">Percentage</div><div class="rg-val">${pct}%</div></div>
+    <div class="rg-item"><div class="rg-label">Time Used</div><div class="rg-val">${timeUsed} min</div></div>
+    <div class="rg-item"><div class="rg-label">Violations</div><div class="rg-val">${S.violations}</div></div>
+    <div class="rg-item"><div class="rg-label">Status</div><div class="rg-val">${auto?'⚠️ Auto-submitted':'✅ Completed'}</div></div>`;
+  let bhtml='<h4>Subject Breakdown</h4>';
+  S.selected.forEach(sub=>{
+    const b=bySubject[sub];
+    bhtml+=`<div class="sb-row"><span class="sb-name">${sub}</span><span class="sb-score">${b.mcqC+b.saqC}/${b.mcqT+b.saqT}</span></div>`;
+  });
+  $('resBreakdown').innerHTML=bhtml;
+}
+</script>
 </body>
 </html>
