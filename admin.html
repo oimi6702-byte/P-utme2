@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniCBT — Admin Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+:root{
+  --ink:#0f172a; --ink2:#334155; --ink3:#64748b;
+  --blue:#1d4ed8; --blue-light:#3b82f6; --blue-dim:#eff6ff; --blue-border:#bfdbfe;
+  --green:#16a34a; --green-dim:#f0fdf4; --green-border:#bbf7d0;
+  --red:#dc2626; --red-dim:#fef2f2; --red-border:#fecaca;
+  --amber:#d97706; --amber-dim:#fffbeb; --amber-border:#fde68a;
+  --bg:#f1f5f9; --card:#fff; --border:#e2e8f0; --border2:#cbd5e1;
+  --r:12px; --r2:8px; --sh:0 1px 3px rgba(0,0,0,0.07),0 4px 16px rgba(0,0,0,0.05);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:up .3s ease both;}
+
+/* ── LOGIN ── */
+#loginWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,#0f172a 0%,#1e3a8a 55%,#1d4ed8 100%);}
+.login-card{background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 32px 64px rgba(0,0,0,.35);}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+.login-logo .ico{width:44px;height:44px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;}
+.login-logo .brand{font-size:1.3rem;font-weight:800;letter-spacing:-.02em;}
+.login-logo .brand span{color:#3b82f6;}
+.lg-sub{font-size:.82rem;color:var(--ink3);margin-bottom:20px;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:.78rem;font-weight:700;color:var(--ink2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em;}
+.fg input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:var(--r2);font-size:.9rem;font-family:inherit;background:#f8fafc;transition:border-color .2s;}
+.fg input:focus{outline:none;border-color:#3b82f6;background:#fff;}
+.btn{padding:11px 22px;border-radius:var(--r2);font-weight:700;font-size:.88rem;cursor:pointer;border:none;transition:.2s;display:inline-flex;align-items:center;gap:7px;font-family:inherit;}
+.btn-primary{background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;width:100%;justify-content:center;box-shadow:0 4px 14px rgba(29,78,216,.3);}
+.btn-primary:hover{box-shadow:0 6px 20px rgba(29,78,216,.4);transform:translateY(-1px);}
+.btn-outline{background:#fff;border:2px solid var(--border2);color:var(--ink2);}
+.btn-outline:hover{border-color:#3b82f6;color:#1d4ed8;}
+.btn-danger{background:#dc2626;color:#fff;}
+.btn-danger:hover{background:#b91c1c;}
+.btn-sm{padding:7px 14px;font-size:.78rem;}
+.btn-green{background:#16a34a;color:#fff;}
+.btn-green:hover{background:#15803d;}
+.err{color:var(--red);font-size:.82rem;margin-bottom:10px;display:none;padding:8px 12px;background:var(--red-dim);border:1px solid var(--red-border);border-radius:var(--r2);}
+
+/* ── DASHBOARD ── */
+#dashWrap{display:none;}
+.topnav{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:100;}
+.topnav .brand{font-weight:800;font-size:1rem;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
+.topnav .brand .tag{background:var(--blue-dim);color:var(--blue);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.05em;}
+.topnav .spacer{flex:1;}
+.topnav .nav-user{font-size:.82rem;color:var(--ink3);font-weight:600;}
+
+.dash-main{max-width:1300px;margin:0 auto;padding:28px 20px;}
+.page-head{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.page-head h1{font-size:1.4rem;font-weight:800;letter-spacing:-.02em;}
+.page-head .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+
+/* stats cards */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);}
+.stat-card .sc-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:6px;}
+.stat-card .sc-val{font-size:1.8rem;font-weight:800;letter-spacing:-.03em;color:var(--ink);}
+.stat-card .sc-sub{font-size:.76rem;color:var(--ink3);margin-top:3px;}
+.stat-card.blue .sc-val{color:var(--blue);}
+.stat-card.green .sc-val{color:var(--green);}
+.stat-card.red .sc-val{color:var(--red);}
+.stat-card.amber .sc-val{color:var(--amber);}
+
+/* search/filter bar */
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-bar input{padding:9px 14px;border:2px solid var(--border);border-radius:var(--r2);font-family:inherit;font-size:.85rem;background:#fff;min-width:220px;}
+.filter-bar input:focus{outline:none;border-color:#3b82f6;}
+.filter-bar select{padding:9px 12px;border:2px solid var(--border);border-radius:var(--r2);font-family:inherit;font-size:.85rem;background:#fff;}
+
+/* table */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+table{width:100%;border-collapse:collapse;font-size:.83rem;}
+thead tr{background:#f8fafc;}
+th{padding:11px 14px;text-align:left;font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#f8fafc;}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.04em;}
+.badge-pass{background:var(--green-dim);color:var(--green);}
+.badge-fail{background:var(--red-dim);color:var(--red);}
+.badge-warn{background:var(--amber-dim);color:var(--amber);}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.8rem;}
+.empty-state{padding:60px 20px;text-align:center;color:var(--ink3);}
+.empty-state .es-icon{font-size:2.5rem;margin-bottom:12px;}
+.empty-state p{font-size:.9rem;}
+
+/* modal */
+#modalOverlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+#modalOverlay.open{display:flex;}
+.modal{background:#fff;border-radius:var(--r);width:100%;max-width:620px;max-height:85vh;overflow-y:auto;box-shadow:0 32px 64px rgba(0,0,0,.3);}
+.modal-head{display:flex;align-items:center;gap:10px;padding:18px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:1;}
+.modal-head h3{font-size:1rem;font-weight:800;flex:1;}
+.modal-body{padding:20px;}
+.detail-section{margin-bottom:20px;}
+.detail-section h4{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.dg-item{padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:var(--r2);}
+.dg-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin-bottom:3px;}
+.dg-val{font-size:.9rem;font-weight:600;color:var(--ink);}
+.sub-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:var(--r2);margin-bottom:6px;}
+.sub-row .sn{flex:1;font-weight:600;font-size:.85rem;}
+.sub-row .sv{font-weight:700;font-size:.85rem;color:var(--blue);}
+.proc-event{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-left:3px solid var(--red);background:var(--red-dim);border-radius:0 var(--r2) var(--r2) 0;margin-bottom:6px;font-size:.8rem;}
+.proc-event .pe-time{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink3);flex-shrink:0;}
+.no-events{font-size:.82rem;color:var(--ink3);text-align:center;padding:16px;background:#f8fafc;border-radius:var(--r2);}
+
+/* pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);font-size:.82rem;color:var(--ink3);}
+.pagination .pg-btns{display:flex;gap:6px;}
+.pg-btn{padding:5px 12px;border:1px solid var(--border);border-radius:var(--r2);background:#fff;cursor:pointer;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--ink2);transition:.15s;}
+.pg-btn:hover{border-color:#3b82f6;color:#1d4ed8;}
+.pg-btn.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed;}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="loginWrap">
+  <div class="login-card anim">
+    <div class="login-logo">
+      <div class="ico">🛡️</div>
+      <div class="brand">Uni<span>CBT</span></div>
+    </div>
+    <p class="lg-sub">Admin Dashboard — Authorised Access Only</p>
+    <div class="fg"><label>Admin PIN</label><input type="password" id="adminPin" placeholder="Enter admin PIN"></div>
+    <div class="err" id="loginErr">Incorrect PIN. Please try again.</div>
+    <button class="btn btn-primary" id="btnAdminLogin">Login →</button>
+  </div>
+</div>
+
+<!-- ═══ DASHBOARD ═══ -->
+<div id="dashWrap">
+  <nav class="topnav">
+    <div class="brand">🎓 UniCBT <span class="tag">ADMIN</span></div>
+    <div class="spacer"></div>
+    <span class="nav-user" id="navDate"></span>
+    <button class="btn btn-outline btn-sm" onclick="doLogout()">🔒 Logout</button>
+  </nav>
+  <div class="dash-main">
+    <div class="page-head">
+      <h1>Exam Results</h1>
+      <div class="actions">
+        <button class="btn btn-outline btn-sm" id="btnRefresh">↻ Refresh</button>
+        <button class="btn btn-green btn-sm" id="btnExport">📥 Export CSV</button>
+        <button class="btn btn-danger btn-sm" id="btnClear">🗑 Clear All</button>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="filter-bar">
+      <input type="text" id="searchInput" placeholder="🔍 Search by name, NIN, email…">
+      <select id="subjectFilter"><option value="">All Subjects</option></select>
+      <select id="statusFilter">
+        <option value="">All Statuses</option>
+        <option value="auto">Auto-Submitted</option>
+        <option value="manual">Manual Submit</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <div id="tableContent"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DETAIL MODAL ═══ -->
+<div id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Candidate Detail</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">✕ Close</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PIN='ADMIN2024';
+const PER_PAGE=15;
+let allResults=[], filtered=[], page=1;
+
+// ─── LOGIN ───
+document.getElementById('adminPin').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+document.getElementById('btnAdminLogin').addEventListener('click',doLogin);
+function doLogin(){
+  if(document.getElementById('adminPin').value===ADMIN_PIN){
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('dashWrap').style.display='block';
+    document.getElementById('navDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    loadData();
+  } else {
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('adminPin').value='';
+  }
+}
+function doLogout(){ location.reload(); }
+
+// ─── LOAD DATA ───
+function loadData(){
+  allResults=JSON.parse(localStorage.getItem('uniCBT_results')||'[]').reverse();
+  buildSubjectFilter();
+  applyFilter();
+  renderStats();
+}
+
+function buildSubjectFilter(){
+  const sf=document.getElementById('subjectFilter');
+  const subs=new Set();
+  allResults.forEach(r=>r.subjects.split(', ').forEach(s=>subs.add(s.trim())));
+  sf.innerHTML='<option value="">All Subjects</option>';
+  [...subs].sort().forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sf.appendChild(o); });
+}
+
+function renderStats(){
+  const total=allResults.length;
+  const avgPct=total?Math.round(allResults.reduce((s,r)=>s+(r.pct||0),0)/total):0;
+  const autoSub=allResults.filter(r=>r.autoSubmit).length;
+  const highViol=allResults.filter(r=>r.violations>=2).length;
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card blue"><div class="sc-label">Total Candidates</div><div class="sc-val">${total}</div><div class="sc-sub">submitted exams</div></div>
+    <div class="stat-card green"><div class="sc-label">Average Score</div><div class="sc-val">${avgPct}%</div><div class="sc-sub">across all candidates</div></div>
+    <div class="stat-card amber"><div class="sc-label">Auto-Submitted</div><div class="sc-val">${autoSub}</div><div class="sc-sub">proctoring triggered</div></div>
+    <div class="stat-card red"><div class="sc-label">High Violations</div><div class="sc-val">${highViol}</div><div class="sc-sub">2+ violations flagged</div></div>`;
+}
+
+function applyFilter(){
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  const subF=document.getElementById('subjectFilter').value;
+  const statusF=document.getElementById('statusFilter').value;
+  filtered=allResults.filter(r=>{
+    const matchS=!search||(r.name||'').toLowerCase().includes(search)||(r.nin||'').toLowerCase().includes(search)||(r.email||'').toLowerCase().includes(search);
+    const matchSub=!subF||r.subjects.includes(subF);
+    const matchSt=!statusF||(statusF==='auto'&&r.autoSubmit)||(statusF==='manual'&&!r.autoSubmit);
+    return matchS&&matchSub&&matchSt;
+  });
+  page=1;
+  renderTable();
+}
+
+['searchInput','subjectFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener('input',applyFilter));
+document.getElementById('btnRefresh').addEventListener('click',()=>{ loadData(); });
+
+function renderTable(){
+  const start=(page-1)*PER_PAGE, end=start+PER_PAGE;
+  const slice=filtered.slice(start,end);
+  const tc=document.getElementById('tableContent');
+  if(!filtered.length){
+    tc.innerHTML='<div class="empty-state"><div class="es-icon">📭</div><p>No exam results found.</p></div>';
+    document.getElementById('pagination').innerHTML='';
+    return;
+  }
+  let html=`<table><thead><tr>
+    <th>#</th><th>Name</th><th>NIN</th><th>Email</th><th>Subjects</th>
+    <th>MCQ</th><th>SAQ</th><th>Total</th><th>%</th>
+    <th>Viols.</th><th>Time</th><th>Status</th><th>Date</th><th></th>
+  </tr></thead><tbody>`;
+  slice.forEach((r,i)=>{
+    const pct=r.pct||0;
+    const pctBadge=pct>=70?'badge-pass':pct>=50?'badge-warn':'badge-fail';
+    const statusBadge=r.autoSubmit?'<span class="badge badge-fail">Auto</span>':'<span class="badge badge-pass">Manual</span>';
+    const violBadge=r.violations>=2?`<span class="badge badge-fail">${r.violations}</span>`:r.violations===1?`<span class="badge badge-warn">${r.violations}</span>`:`<span style="color:var(--ink3);">${r.violations}</span>`;
+    html+=`<tr>
+      <td style="color:var(--ink3);">${start+i+1}</td>
+      <td><strong>${r.name||'—'}</strong></td>
+      <td class="mono">${r.nin||'—'}</td>
+      <td style="font-size:.78rem;">${r.email||'—'}</td>
+      <td style="font-size:.76rem;color:var(--ink2);">${r.subjects||'—'}</td>
+      <td class="mono">${r.mcqScore||'—'}</td>
+      <td class="mono">${r.saqScore||'—'}</td>
+      <td class="mono"><strong>${r.totalScore||'—'}</strong></td>
+      <td><span class="badge ${pctBadge}">${pct}%</span></td>
+      <td>${violBadge}</td>
+      <td style="color:var(--ink3);">${r.timeUsed} min</td>
+      <td>${statusBadge}</td>
+      <td style="font-size:.74rem;color:var(--ink3);">${r.date||'—'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="openDetail(${start+i})">View</button></td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  tc.innerHTML=html;
+  renderPagination();
+}
+
+function renderPagination(){
+  const total=filtered.length, pages=Math.ceil(total/PER_PAGE);
+  const pg=document.getElementById('pagination');
+  if(pages<=1){ pg.innerHTML=''; return; }
+  let btns='';
+  for(let p=1;p<=pages;p++) btns+=`<button class="pg-btn${p===page?' active':''}" onclick="goPage(${p})">${p}</button>`;
+  pg.innerHTML=`<span>Showing ${(page-1)*PER_PAGE+1}–${Math.min(page*PER_PAGE,total)} of ${total}</span><div class="pg-btns">${btns}</div>`;
+}
+function goPage(p){ page=p; renderTable(); window.scrollTo(0,0); }
+
+// ─── DETAIL MODAL ───
+function openDetail(idx){
+  const r=filtered[idx];
+  if(!r) return;
+  document.getElementById('modalTitle').textContent=r.name||'Candidate Detail';
+  let html='';
+
+  // Candidate info
+  html+=`<div class="detail-section"><h4>Candidate Information</h4><div class="detail-grid">
+    <div class="dg-item"><div class="dg-label">Full Name</div><div class="dg-val">${r.name||'—'}</div></div>
+    <div class="dg-item"><div class="dg-label">Email</div><div class="dg-val" style="font-size:.82rem;">${r.email||'—'}</div></div>
+    <div class="dg-item"><div class="dg-label">NIN / Reg No.</div><div class="dg-val dg-val--mono" style="font-family:'JetBrains Mono',monospace;">${r.nin||'—'}</div></div>
+    <div class="dg-item"><div class="dg-label">Phone</div><div class="dg-val">${r.phone||'—'}</div></div>
+    <div class="dg-item"><div class="dg-label">Date &amp; Time</div><div class="dg-val" style="font-size:.82rem;">${r.date||'—'}</div></div>
+    <div class="dg-item"><div class="dg-label">Subjects Selected</div><div class="dg-val" style="font-size:.82rem;">${r.subjects||'—'}</div></div>
+  </div></div>`;
+
+  // Scores
+  html+=`<div class="detail-section"><h4>Score Summary</h4><div class="detail-grid">
+    <div class="dg-item"><div class="dg-label">MCQ Score</div><div class="dg-val">${r.mcqScore||'—'}</div></div>
+    <div class="dg-item"><div class="dg-label">SAQ Score</div><div class="dg-val">${r.saqScore||'—'}</div></div>
+    <div class="dg-item"><div class="dg-label">Total Score</div><div class="dg-val" style="color:var(--blue);">${r.totalScore||'—'}</div></div>
+    <div class="dg-item"><div class="dg-label">Percentage</div><div class="dg-val" style="color:${(r.pct||0)>=70?'var(--green)':(r.pct||0)>=50?'var(--amber)':'var(--red)'};">${r.pct||0}%</div></div>
+    <div class="dg-item"><div class="dg-label">Time Used</div><div class="dg-val">${r.timeUsed} minutes</div></div>
+    <div class="dg-item"><div class="dg-label">Submit Mode</div><div class="dg-val">${r.autoSubmit?'⚠️ Auto-submitted':'✅ Manual submit'}</div></div>
+    ${r.submitReason?`<div class="dg-item" style="grid-column:span 2;"><div class="dg-label">Submit Reason</div><div class="dg-val">${r.submitReason}</div></div>`:''}
+  </div></div>`;
+
+  // Subject breakdown
+  if(r.bySubject){
+    html+=`<div class="detail-section"><h4>Subject Breakdown</h4>`;
+    Object.entries(r.bySubject).forEach(([sub,b])=>{
+      const tot=(b.mcqC+b.saqC), totT=(b.mcqT+b.saqT);
+      const pct=totT?Math.round((tot/totT)*100):0;
+      html+=`<div class="sub-row">
+        <span class="sn">${sub}</span>
+        <span style="font-size:.75rem;color:var(--ink3);">MCQ ${b.mcqC}/${b.mcqT} · SAQ ${b.saqC}/${b.saqT}</span>
+        <span class="sv">${tot}/${totT} (${pct}%)</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Proctoring events
+  html+=`<div class="detail-section"><h4>Proctoring Log (${r.violations} violation${r.violations!==1?'s':''})</h4>`;
+  if(r.procEvents&&r.procEvents.length){
+    r.procEvents.forEach(ev=>{
+      const t=new Date(ev.time).toLocaleTimeString();
+      html+=`<div class="proc-event"><span class="pe-time">${t}</span><span>⚠️ ${ev.event} — Violation ${ev.count}/3</span></div>`;
+    });
+  } else {
+    html+=`<div class="no-events">✅ No proctoring violations recorded.</div>`;
+  }
+  html+=`</div>`;
+
+  document.getElementById('modalBody').innerHTML=html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+document.getElementById('modalOverlay').addEventListener('click',e=>{ if(e.target===document.getElementById('modalOverlay')) closeModal(); });
+
+// ─── EXPORT CSV ───
+document.getElementById('btnExport').addEventListener('click',()=>{
+  if(!allResults.length) return alert('No data to export.');
+  let csv='Name,NIN,Email,Phone,Subjects,MCQ Score,SAQ Score,Total Score,Percentage,Violations,Time Used (min),Auto Submit,Submit Reason,Date\n';
+  allResults.forEach(r=>{
+    csv+=`"${r.name||''}","${r.nin||''}","${r.email||''}","${r.phone||''}","${r.subjects||''}","${r.mcqScore||''}","${r.saqScore||''}","${r.totalScore||''}","${r.pct||0}%","${r.violations}","${r.timeUsed}","${r.autoSubmit?'Yes':'No'}","${r.submitReason||''}","${r.date||''}"\n`;
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`unicbt_results_${Date.now()}.csv`; a.click();
+});
+
+// ─── CLEAR ───
+document.getElementById('btnClear').addEventListener('click',()=>{
+  if(confirm('⚠️ This will permanently delete ALL exam results. This cannot be undone.\n\nAre you sure?')){
+    localStorage.removeItem('uniCBT_results'); loadData();
+  }
+});
+</script>
+</body>
+</html>
